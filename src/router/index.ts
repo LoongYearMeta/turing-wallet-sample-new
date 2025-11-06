@@ -5,41 +5,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('../views/Home.vue'),
+    component: () => import('../views/home/home.vue'),
     meta: {
-      title: '首页'
-    }
-  },
-  {
-    path: '/wallet',
-    name: 'Wallet',
-    component: () => import('../views/Wallet.vue'),
-    meta: {
-      title: '钱包'
-    }
-  },
-  {
-    path: '/wallet/test',
-    name: 'WalletTest',
-    component: () => import('../views/WalletTest.vue'),
-    meta: {
-      title: '钱包测试'
-    }
-  },
-  {
-    path: '/transactions',
-    name: 'Transactions',
-    component: () => import('../views/Transactions.vue'),
-    meta: {
-      title: '交易记录'
-    }
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: () => import('../views/Settings.vue'),
-    meta: {
-      title: '设置'
+      title: 'Home'
     }
   },
   {
@@ -53,7 +21,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signing-demo/message-signing',
     name: 'MessageSigning',
-    component: () => import('../views/MessageSigning.vue'),
+    component: () => import('../views/msg-signing.vue'),
     meta: {
       title: 'Message Signing'
     }
@@ -61,7 +29,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signing-demo/sign-transaction',
     name: 'SignTransaction',
-    component: () => import('../views/SignTransaction.vue'),
+    component: () => import('../views/sign-transaction.vue'),
     meta: {
       title: 'Sign Transaction'
     }
@@ -69,7 +37,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/crypt',
     name: 'Crypt',
-    component: () => import('../views/Crypt.vue'),
+    component: () => import('../views/crypt.vue'),
     meta: {
       title: 'Encrypt/Decrypt Demo'
     }
@@ -77,7 +45,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/decode-txraws',
     name: 'DecodeTxraws',
-    component: () => import('../views/DecodeTxraws.vue'),
+    component: () => import('../views/decode-txraws.vue'),
     meta: {
       title: 'Decode Txraws'
     }
@@ -85,7 +53,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/keys-to-address',
     name: 'KeysToAddress',
-    component: () => import('../views/KeysToAddress.vue'),
+    component: () => import('../views/keys-to-address.vue'),
     meta: {
       title: 'Keys to Address'
     }
@@ -125,7 +93,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/wallet-test',
     name: 'WalletTest',
-    component: () => import('../views/WalletTestPage.vue'),
+    component: () => import('../views/wallet-test.vue'),
     meta: {
       title: 'Turing Wallet Test'
     }
@@ -133,7 +101,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/records',
     name: 'HistoryRecords',
-    component: () => import('../views/HistoryRecords.vue'),
+    component: () => import('../views/history-records.vue'),
     meta: {
       title: 'History Records'
     }

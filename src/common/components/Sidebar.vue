@@ -123,7 +123,7 @@ const activeRoute = computed(() => route.path)
 const menuItems: MenuItem[] = [
   {
     path: '/',
-    label: '首页',
+    label: 'Home',
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'
   },
   {
@@ -279,6 +279,14 @@ defineExpose({
   padding: 0px var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
   min-height: var(--header-height);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.logo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .logo h2 {
@@ -286,6 +294,10 @@ defineExpose({
   color: var(--color-primary);
   font-size: 1.25rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .collapse-btn {
@@ -518,6 +530,45 @@ defineExpose({
 
 .sidebar.collapsed .nav-arrow {
   display: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-collapsed-width);
+  }
+
+  .sidebar:not(.collapsed) {
+    width: var(--sidebar-width);
+  }
+
+  .sidebar-header {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .logo h2 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-header {
+    padding: 0 var(--spacing-xs);
+  }
+
+  .logo h2 {
+    font-size: 1rem;
+  }
+
+  .collapse-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .collapse-btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 </style>
 
