@@ -3,9 +3,59 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Design Tokens - Orange Theme Colors */
+  --color-primary: #ff8c00;
+  --color-primary-light: #ffa500;
+  --color-primary-dark: #ff7f00;
+  --color-primary-hover: #ff9500;
+  --color-primary-active: #ff6b00;
+  
+  /* Design Tokens - Background Colors (Dark Theme) */
+  --color-bg-dark: #000000;
+  --color-bg-darker: #1a1a1a;
+  --color-bg-darkest: #0d0d0d;
+  --color-bg-light: #2a2a2a;
+  
+  /* Design Tokens - Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-text-tertiary: #999999;
+  
+  /* Design Tokens - Border Colors */
+  --color-border: #333333;
+  --color-border-light: #404040;
+  
+  /* Design Tokens - Status Colors */
+  --color-error: #ff4d4f;
+  --color-success: #51cf66;
+  --color-warning: #ffa500;
+  --color-info: #409eff;
+
+  /* Design Tokens - Layout Sizes */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 64px;
+
+  /* Design Tokens - Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 15px;
+  --radius-lg: 20px;
+  
+  /* Design Tokens - Spacing */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 20px;
+  --spacing-lg: 25px;
+  --spacing-xl: 32px;
+
+  /* Design Tokens - Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 15px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,21 +63,50 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* 全局基础样式 - Reset 样式 */
+input,
+button,
+select {
+  border: none;
+  outline: none;
+  border: 1px solid transparent;
 }
-a:hover {
-  color: #535bf2;
+
+/* 按钮点击时移除默认边框和轮廓 */
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none !important;
+}
+
+input:focus,
+input:focus-visible {
+  outline: none;
+}
+
+select:focus,
+select:focus-visible {
+  outline: none;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  background-color: var(--color-bg-dark);
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text-primary);
+}
+
+a {
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--color-primary-light);
 }
 
 h1 {
@@ -35,6 +114,7 @@ h1 {
   line-height: 1.1;
 }
 
+/* 默认按钮样式 */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -42,16 +122,11 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.25s;
 }
 button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  opacity: 0.9;
 }
 
 .card {
@@ -59,21 +134,51 @@ button:focus-visible {
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Autofill styles - 覆盖浏览器自动填充样式 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+input:-internal-autofill-selected {
+	-webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
+	box-shadow: 0 0 0 100px #ffffff inset !important;
+	background-color: #ffffff !important;
+	color: #333 !important;
+	-webkit-text-fill-color: #333 !important;
+	font-size: 16px !important;
+}
+
+input:-webkit-autofill {
+	-webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
+	box-shadow: 0 0 0 100px #ffffff inset !important;
+}
+
+/* 全局重置样式 */
+* {
+  box-sizing: border-box;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-darker);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
 }
