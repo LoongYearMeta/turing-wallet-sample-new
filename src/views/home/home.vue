@@ -1,23 +1,32 @@
 <template>
   <div class="home-page">
-    <NavCard />
+    <h2 class="home-page-title">测试工具</h2>
+    <p class="home-page-subtitle">选择测试项目开始</p>
+    <Address />
+    <FunctionsNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import NavCard from './components/nav.vue'
+import Address from './components/address.vue'
+import FunctionsNav from './components/functions-nav.vue'
 </script>
 
 <style scoped>
 .home-page {
   padding: var(--spacing-lg);
-  min-height: calc(100vh - var(--header-height));
+  min-height: calc(100vh - var(--header-height) - var(--spacing-lg)*2);
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
+}
+
+.home-page-title, .home-page-subtitle {
+  margin: 0;
+  margin-left: var(--spacing-md);
 }
 
 /* 响应式设计 */
