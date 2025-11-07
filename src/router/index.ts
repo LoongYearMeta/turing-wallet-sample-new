@@ -21,7 +21,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signing-demo/message-signing',
     name: 'MessageSigning',
-    component: () => import('../views/msg-signing.vue'),
+    component: () => import('../views/Signing/msg-signing.vue'),
     meta: {
       title: 'Message Signing'
     }
@@ -29,7 +29,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signing-demo/sign-transaction',
     name: 'SignTransaction',
-    component: () => import('../views/sign-transaction.vue'),
+    component: () => import('../views/Signing/sign-transaction.vue'),
     meta: {
       title: 'Sign Transaction'
     }

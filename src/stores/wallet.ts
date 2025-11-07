@@ -1,10 +1,20 @@
 import { defineStore } from 'pinia';
 import { reactive, ref, computed } from 'vue';
 import { API } from 'tbc-contract';
+// 引入本地存储工具函数
 import { getLocalStorage, setLocalStorage, removeLocalStorage } from '../utils/storage';
 
+/*
+ * 钱包状态管理 store
+ * 钱包连接状态
+ * 钱包地址
+ * 钱包余额
+ * 区块高度
+ * 主动连接/断开钱包连接
+ * 账号变更检查
+ */
 export const useWalletStore = defineStore('wallet', () => {
-	// 状态
+	// 响应式状态
 	const walletInfo = reactive({
 		address: '', // 钱包地址
 		tbcBalance: null as number | null, // 钱包余额
@@ -15,12 +25,14 @@ export const useWalletStore = defineStore('wallet', () => {
 	const isLoadingBalance = ref(false);
 	const isLoadingHeight = ref(false);
 
+	// 钱包连接状态
 	const isConnected = ref(false);
 	
-	// 用于控制检查频率的时间戳
-	let lastCheckTime = 0;
+	// 检查频率控制
+	let lastCheckTime = 0; // 上次检查时间戳
 	const CHECK_INTERVAL = 5000; // 最小检查间隔：5秒（避免过度频繁的调用）
 
+	// 检查钱包是否就绪（是否已注入Turing对象）
 	const isReady = computed(() => {
 		return typeof window !== 'undefined' && !!window.Turing;
 	});

@@ -20,6 +20,7 @@
         <span class="wallet-address-text">{{ displayAddress }}</span>
       </div>
     </div>
+    <button v-else @click="walletStore.getAddress">Connect Wallet</button>
   </header>
 </template>
 

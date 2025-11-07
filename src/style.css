@@ -53,6 +53,20 @@
   --shadow-md: 0 2px 15px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
 
+  /* font styles */
+  --font-size-title: 1.5rem;
+  --font-size-subtitle: 0.9rem;
+  --font-size-body: 1rem;
+  --font-size-small: 0.8rem;
+  --font-size-tiny: 0.6rem;
+
+  /* form styles */
+  --form-bg-color: #1c1c1c;
+  --form-border-color: #474747;
+  --form-item-bg-color: #2d2d2d;
+  --form-item-bg-hover-color: #3b3b3b;
+  --form-placeholder-color: #9299a3;
+
   color-scheme: dark;
   color: var(--color-text-primary);
   background-color: var(--color-bg-dark);
@@ -64,6 +78,10 @@
 }
 
 /* 全局基础样式 - Reset 样式 */
+h1, h2, h3, h4, h5, h6, p, span {
+  margin: 0;
+}
+
 input,
 button,
 select {
@@ -127,10 +145,6 @@ button {
 }
 button:hover {
   opacity: 0.9;
-}
-
-.card {
-  padding: 2em;
 }
 
 #app {

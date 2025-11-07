@@ -1,0 +1,183 @@
+.message-signing-page {
+	padding: var(--spacing-lg);
+}
+
+.page-title {
+	color: var(--color-primary);
+	font-size: var(--font-size-title);
+	text-align: center;
+}
+
+.page-description {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-subtitle);
+	text-align: center;
+	margin-top: var(--spacing-xs);
+	margin-bottom: var(--spacing-lg);
+}
+
+/* form styles */
+.msg-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+	background-color: var(--form-bg-color);
+	padding: var(--spacing-md);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--form-border-color);
+}
+
+.msg-form-title {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	font-size: 1.2rem;
+	font-weight: 600;
+	color: var(--color-text-primary);
+}
+
+.msg-form-description {
+	font-size: var(--font-size-subtitle);
+	color: var(--color-text-secondary);
+}
+
+.form-item {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+
+.form-item label {
+	font-size: var(--font-size-subtitle);
+	color: var(--color-text-secondary);
+}
+
+.form-item input,
+.form-item select {
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+}
+
+.form-item textarea {
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+}
+
+/* 自定义下拉样式 */
+.custom-select {
+	position: relative;
+	display: inline-block;
+	width: 100%;
+}
+
+.select-trigger:hover {
+	background-color: var(--form-item-bg-hover-color);
+	cursor: pointer;
+}
+
+.select-trigger {
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--form-item-bg-color);
+	transition: background-color 0.2s ease; /* 添加过渡动画 */
+}
+
+.select-arrow {
+	position: absolute;
+	right: var(--spacing-xs);
+	top: 50%;
+	transform: translateY(-50%);
+	transition: transform 0.2s ease; /* 添加过渡动画 */
+}
+.select-arrow.rotate-180 {
+	transform: translateY(-50%) rotate(180deg);
+}
+
+/* 下拉浮层样式 */
+.select-dropdown {
+	position: absolute;
+	top: 110%;
+	left: 0;
+	right: 0;
+	width: 100%;
+	background-color: var(--form-item-bg-color);
+	border-radius: var(--radius-sm);
+}
+
+.select-dropdown .dropdown-option {
+	padding: var(--spacing-sm);
+	border-radius: var(--radius-sm);
+	background-color: var(--form-item-bg-color);
+}
+
+.dropdown-option:hover {
+	background-color: var(--form-item-bg-hover-color);
+	cursor: pointer;
+}
+
+/* 下拉浮层动画 */
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
+}
+
+/* textarea styles */
+.form-item-textarea {
+	width: 100%;
+	height: 100%;
+	resize: none;
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--form-item-bg-color);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
+	font-family: var(--font-family-monospace);
+}
+
+.form-item-textarea:focus {
+	outline: none;
+	border-color: var(--color-primary);
+}
+
+.form-button-submit {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--form-border-color);
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body);
+  transition: all 0.2s ease;
+}
+
+.form-button-submit:hover {
+  background-color: var(--color-primary-active);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.form-button-submit:active {
+  background-color: var(--color-primary-active);
+  color: var(--color-text-primary);
+}
+
+/* result textarea styles */
+.form-item-result {
+  cursor: auto;
+}
+
+.form-item-result:focus {
+  outline: none;
+  border-color: var(--form-border-color);
+}
+
+.msg-result {
+	margin-top: var(--spacing-md);
+}
