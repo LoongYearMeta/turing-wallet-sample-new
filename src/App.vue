@@ -12,7 +12,6 @@ const toastApi = useToast()
   </Layout>
   <!-- 全局消息提示 -->
   <Toast
-    v-if="toastApi.state.visible"
     :visible="toastApi.state.visible"
     :type="toastApi.state.type"
     :message="toastApi.state.message"

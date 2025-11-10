@@ -31,20 +31,20 @@ const toastState = reactive<ToastState>({
 
 // 提供全局Tosat实例（在main.ts中注入）
 export function provideToast(app: App) {
+  // 设置Toast状态
   const setToast = (type: ToastType, message: string, duration: number) => {
     toastState.type = type
     toastState.message = message
     toastState.duration = duration
     toastState.visible = true
   }
-
+  // 重置Toast状态
   const resetToast = () => {
     toastState.visible = false
     toastState.message = ''
     toastState.duration = 3000
     toastState.type = 'success'
   }
-
   const toastApi: ToastApi = {
     state: toastState,
     showSuccess: (message: string, duration: number = 3000) => {

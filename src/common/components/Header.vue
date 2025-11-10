@@ -47,6 +47,9 @@ const walletStore = useWalletStore();
 const { walletInfo, isConnected, isConnecting } = storeToRefs(walletStore);
 const { getWalletInfo } = walletStore;
 
+// 消息提示
+const toastApi = useToast();
+
 // 从路由获取页面标题，可以通过路由 meta 配置
 const pageTitle = computed(() => {
 	return (route.meta?.title as string) || '控制台';
@@ -90,8 +93,7 @@ const checkMobile = () => {
 	isMobile.value = window.innerWidth <= 768;
 };
 
-// 消息提示
-const toastApi = useToast();
+
 
 onMounted(async () => {
 	checkMobile();
