@@ -156,14 +156,20 @@
   font-size: var(--font-size-body);
   transition: all 0.2s ease;
 }
+.form-button-submit:disabled {
+  cursor: not-allowed;
+  background-color: var(--form-item-bg-color);
+  color: var(--color-text-secondary);
+  border-color: var(--form-border-color);
+}
 
-.form-button-submit:hover {
+.form-button-submit:hover:not(:disabled) {
   background-color: var(--color-primary-active);
   color: var(--color-text-primary);
   cursor: pointer;
 }
 
-.form-button-submit:active {
+.form-button-submit:active:not(:disabled) {
   background-color: var(--color-primary-active);
   color: var(--color-text-primary);
 }
@@ -184,4 +190,22 @@
 
 .msg-result {
 	margin-top: var(--spacing-md);
+}
+
+/* error message styles */
+.form-item-error {
+  color: var(--color-error);
+  font-size: var(--font-size-small);
+  margin-top: var(--spacing-xs);
+	text-align: center;
+}
+
+/* error message animation */
+.error-fade-enter-active,
+.error-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.error-fade-enter-from,
+.error-fade-leave-to {
+  opacity: 0;
 }

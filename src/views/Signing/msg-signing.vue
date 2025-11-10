@@ -179,7 +179,6 @@ const selectOption = (option: { label: string; value: string }) => {
 
 //SIGN MESSAGE
 const handleSignMessage = async () => {
-	console.log('test');
 	if (!signMessage.value) {
 		// 错误提示
 		toastApi.showError('Please enter a message to sign', 3000);
