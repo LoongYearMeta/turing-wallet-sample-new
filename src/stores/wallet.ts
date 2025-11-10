@@ -21,13 +21,16 @@ export const useWalletStore = defineStore('wallet', () => {
 		blockHeight: null as number | null, // 当前区块高度
 	});
 
+	// 连接中状态
+	const isConnecting = ref(false)
+
 	// 加载状态
 	const isLoadingBalance = ref(false);
 	const isLoadingHeight = ref(false);
 
 	// 钱包连接状态
 	const isConnected = ref(false);
-	
+
 	// 检查频率控制
 	let lastCheckTime = 0; // 上次检查时间戳
 	const CHECK_INTERVAL = 5000; // 最小检查间隔：5秒（避免过度频繁的调用）
@@ -46,8 +49,9 @@ export const useWalletStore = defineStore('wallet', () => {
 			alert('请先安装Turing Wallet!');
 			return false;
 		}
-
+		if (isConnecting.value) return false; // 避免重复连接
 		try {
+			isConnecting.value = true;
 			// 先尝试连接钱包（会弹出授权窗口）
 			await window.Turing.connect();
 			const { tbcAddress } = await window.Turing.getAddress();
@@ -86,6 +90,8 @@ export const useWalletStore = defineStore('wallet', () => {
 			removeLocalStorage('tbcAddress');
 			alert('连接钱包失败!');
 			return false;
+		} finally {
+			isConnecting.value = false;
 		}
 	};
 
@@ -164,6 +170,10 @@ export const useWalletStore = defineStore('wallet', () => {
 			}
 			
 			lastCheckTime = now;
+			isConnecting.value = true;
+
+			// 刷新时先尝试建立连接
+			await window.Turing.connect();
 			
 			// 获取地址
 			const { tbcAddress } = await window.Turing.getAddress();
@@ -215,11 +225,14 @@ export const useWalletStore = defineStore('wallet', () => {
 			walletInfo.blockHeight = null;
 			removeLocalStorage('tbcAddress');
 			return false;
+		} finally {
+			isConnecting.value = false;
 		}
 	};
 
 	return {
 		walletInfo,
+		isConnecting,
 		isConnected,
 		isReady,
 		isLoadingBalance,

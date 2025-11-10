@@ -169,6 +169,10 @@
 }
 
 /* result textarea styles */
+.form-item-textarea {
+	height: 10rem;
+}
+
 .form-item-result {
   cursor: auto;
 }

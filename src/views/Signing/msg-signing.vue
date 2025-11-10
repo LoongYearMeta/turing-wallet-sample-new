@@ -6,7 +6,7 @@
 			Please enter the message you want to sign and select the encoding type.
 		</p>
 		<!-- form -->
-		<form class="msg-form">
+		<form class="msg-form" @submit.prevent="handleSignMessage">
 			<!-- form header -->
 			<div class="msg-form-header">
 				<div class="msg-form-title">
@@ -102,7 +102,7 @@
 					id="message"
 				></textarea>
 			</div>
-			<button class="form-button-submit" @click="handleSignMessage" type="submit">Sign Message</button>
+			<button class="form-button-submit" @click.stop="handleSignMessage" type="button">Sign Message</button>
 		</form>
 		<!-- result -->
 		<div class="msg-form msg-result">
@@ -132,6 +132,7 @@
 				v-model="signedMessage"
 				readonly
 				placeholder="Please input message to sign first"
+				autosize
 			></textarea>
 		</div>
 	</div>
@@ -139,17 +140,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-// import { useWalletStore } from '../../stores/wallet';
-// const walletStore = useWalletStore();
-// const { isConnected } = walletStore;
+import { useToast } from '../../utils/useToast';
+import { useWalletStore } from '../../stores/wallet';
+// import { storeToRefs } from 'pinia'
 
-// onMounted(() => {
-// 	if (isConnected.value) {
-// 		console.log('Turing is ready');
-// 	} else {
-// 		console.log('Turing is not ready');
-// 	}
-// });
+// 钱包状态管理
+const walletStore = useWalletStore()
+const { getWalletInfo } = walletStore
+
+// 消息提示
+const toastApi = useToast();
 
 // 编码类型选项
 const options = [
@@ -181,8 +181,8 @@ const selectOption = (option: { label: string; value: string }) => {
 const handleSignMessage = async () => {
 	console.log('test');
 	if (!signMessage.value) {
-		// 错误提示：后续样式补全 - 全局提示样式
-		alert('Please enter a message to sign');
+		// 错误提示
+		toastApi.showError('Please enter a message to sign', 3000);
 		return;
 	}
 	try {
@@ -193,9 +193,10 @@ const handleSignMessage = async () => {
 		// 格式化响应对象，使其更易读
 		const formattedResponse = JSON.stringify(response, null, 2);
 		setSignatureResponse(formattedResponse);
+		toastApi.showSuccess('Message signed successfully', 3000);
 	} catch (error) {
 		console.error('Sign message error:', error);
-		alert('Failed to sign message');
+		toastApi.showError('Failed to sign message', 3000);
 		setSignatureResponse('');
 	}
 };
@@ -204,7 +205,10 @@ const setSignatureResponse = (response: string) => {
 	signedMessage.value = response;
 };
 
-
+// 检查钱包连接状态
+onMounted(async () => {
+  await getWalletInfo()
+})
 
 </script>
 

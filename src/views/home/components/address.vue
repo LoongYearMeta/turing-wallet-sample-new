@@ -48,6 +48,7 @@ import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useWalletStore } from '../../../stores/wallet'
 import { storeToRefs } from 'pinia'
 
+// 钱包状态管理
 const walletStore = useWalletStore()
 const { walletInfo, isConnected } = storeToRefs(walletStore)
 const { getWalletInfo } = walletStore
@@ -123,6 +124,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: var(--spacing-md);
 }
 
 .nav-button button {
