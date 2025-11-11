@@ -45,7 +45,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/decode-txraws',
     name: 'DecodeTxraws',
-    component: () => import('../views/decode-txraws.vue'),
+    component: () => import('../views/decode-txraws/decode-txraws.vue'),
     meta: {
       title: 'Decode Txraws'
     }
