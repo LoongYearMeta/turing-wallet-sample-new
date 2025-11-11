@@ -75,20 +75,22 @@
 			</ul>
 		</nav>
 		<!-- 收起状态下的子菜单浮层 -->
-		<div v-if="isCollapsed && isFloatingMenuVisible" class="floating-submenu">
-			<ul class="floating-submenu-list">
-				<li
-					v-for="child in currentFloatingMenuItems?.children || []"
-					:key="child.path"
-					class="floating-submenu-item"
-					:class="{ active: activeRoute === child.path }"
-				>
-					<router-link :to="child.path" class="floating-submenu-link" @click="closeFloatingMenu">
-						<span class="floating-submenu-text">{{ child.label }}</span>
-					</router-link>
-				</li>
-			</ul>
-		</div>
+		<Transition name="fade-menu">
+			<div v-if="isCollapsed && isFloatingMenuVisible" class="floating-submenu">
+				<ul class="floating-submenu-list">
+					<li
+						v-for="child in currentFloatingMenuItems?.children || []"
+						:key="child.path"
+						class="floating-submenu-item"
+						:class="{ active: activeRoute === child.path }"
+					>
+						<router-link :to="child.path" class="floating-submenu-link" @click="closeFloatingMenu">
+							<span class="floating-submenu-text">{{ child.label }}</span>
+						</router-link>
+					</li>
+				</ul>
+			</div>
+		</Transition>
 	</aside>
 </template>
 
@@ -161,18 +163,18 @@ const activeRoute = computed(() => route.path);
 
 // 实时筛选包含当前路由的父菜单
 const activeParentItems = computed(() => {
-  const activePath = activeRoute.value;
-  const parentItems: MenuItem[] = [];
-  menuItems.forEach(item => {
-    if (item.children && item.children.length > 0) {
-      const hasActiveChild = item.children.some(child => child.path === activePath);
-      if (hasActiveChild) {
-        parentItems.push(item);
-      }
-    }
-  });
-  return parentItems;
-})
+	const activePath = activeRoute.value;
+	const parentItems: MenuItem[] = [];
+	menuItems.forEach((item) => {
+		if (item.children && item.children.length > 0) {
+			const hasActiveChild = item.children.some((child) => child.path === activePath);
+			if (hasActiveChild) {
+				parentItems.push(item);
+			}
+		}
+	});
+	return parentItems;
+});
 
 // 菜单项
 const menuItems: MenuItem[] = [
@@ -264,9 +266,12 @@ const toggleSubmenu = (item: MenuItem) => {
 };
 
 // 路由跳转后关闭浮层
-watch(() => route.path, () => {
-	closeFloatingMenu();
-});
+watch(
+	() => route.path,
+	() => {
+		closeFloatingMenu();
+	},
+);
 
 // 检查是否为激活的父菜单
 // const isActiveParent = (item: MenuItem): boolean => {
@@ -308,9 +313,9 @@ watch(
 const toggleCollapse = () => {
 	isCollapsed.value = !isCollapsed.value;
 	emit('update:collapsed', isCollapsed.value);
-  if (isCollapsed.value) {
-    closeFloatingMenu();
-  }
+	if (isCollapsed.value) {
+		closeFloatingMenu();
+	}
 };
 
 // 初始化时，如果当前路由在子菜单中，自动展开父菜单
@@ -617,12 +622,12 @@ defineExpose({
 	top: var(--header-height);
 	left: 64px;
 	background-color: var(--color-bg-darker);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  min-width: 200px;
-  max-width: 90vh;
-  overflow-y: auto;
+	border: 1px solid var(--color-border);
+	box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	min-width: 200px;
+	max-width: 90vh;
+	overflow-y: auto;
 }
 
 .floating-submenu-list {
@@ -638,11 +643,11 @@ defineExpose({
 
 .floating-submenu-link {
 	display: flex;
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
-  transition: all 0.3s ease;
+	padding: var(--spacing-sm) var(--spacing-md);
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	border-radius: var(--radius-sm);
+	transition: all 0.3s ease;
 }
 
 .floating-submenu-link:hover {
@@ -657,6 +662,19 @@ defineExpose({
 
 .floating-submenu-text {
 	white-space: nowrap;
+}
+
+/* 浮层动画 */
+.fade-menu-enter-active,
+.fade-menu-leave-active {
+	transform: translateY(0);
+	transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.fade-menu-enter-from,
+.fade-menu-leave-to {
+	opacity: 0;
+	transform: translateY(-10px);
 }
 
 /* 响应式设计 */
