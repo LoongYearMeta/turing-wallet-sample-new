@@ -62,6 +62,20 @@ declare global {
 			 * @returns 包含签名结果的对象
 			 */
 			signMessage(params: { message: string; encoding: string }): Promise<{ signature: string }>;
+			/**
+			 * 加密消息
+			 * @param params 加密参数
+			 * @param params.message 消息内容
+			 * @returns 包含加密结果的对象
+			 */
+			encrypt(params: { message: string }): Promise<{ message: string }>;
+			/**
+			 * 解密消息
+			 * @param params 解密参数
+			 * @param params.message 加密后的消息
+			 * @returns 包含解密结果的对象
+			 */
+			decrypt(params: { message: string }): Promise<{ message: string }>;
 		};
 	}
 }

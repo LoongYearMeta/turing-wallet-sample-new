@@ -37,7 +37,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/crypt',
     name: 'Crypt',
-    component: () => import('../views/crypt.vue'),
+    component: () => import('../views/crypt/crypt.vue'),
     meta: {
       title: 'Encrypt/Decrypt Demo'
     }
