@@ -119,6 +119,7 @@
 				v-model="signatureRes"
 				readonly
 				placeholder="Signature result will be displayed here"
+				@click="handleCopy"
 				autosize
 			></textarea>
 		</div>
@@ -202,11 +203,10 @@ const parseUtxosSatoshis = (input: string): ParseRes<number[][]> => {
 		const allNumberArrays = parsed.every(
 			(subArr) =>
 				Array.isArray(subArr) &&
-				subArr.length > 0 &&
 				subArr.every((item) => typeof item === 'number' && !isNaN(item)),
 		);
 		if (!allNumberArrays)
-			return { valid: false, error: 'Sub arrays must be non-empty and contain only numbers' };
+			return { valid: false, error: 'Sub arrays must contain only numbers' };
 		return { valid: true, data: parsed };
 	} catch (error) {
 		// JSON解析错误
@@ -233,11 +233,10 @@ const parseScriptPubkeys = (input: string): ParseRes<string[][]> => {
 		const allStringArrays = parsed.every(
 			(subArr) =>
 				Array.isArray(subArr) &&
-				subArr.length > 0 &&
 				subArr.every((item) => typeof item === 'string'),
 		);
 		if (!allStringArrays)
-			return { valid: false, error: 'Sub arrays must be non-empty and contain only strings' };
+			return { valid: false, error: 'Sub arrays must contain only strings' };
 		return { valid: true, data: parsed };
 	} catch (err) {
 		return { valid: false, error: 'Invalid JSON format' };
@@ -331,6 +330,12 @@ const handleSignTransaction = async () => {
 		toastApi.showError(errorMsg, 3000);
 		signatureRes.value = '';
 	}
+};
+
+// 点击复制
+const handleCopy = () => {
+	navigator.clipboard.writeText(signatureRes.value);
+	toastApi.showSuccess('Copied to clipboard', 3000);
 };
 
 // 检查钱包连接状态
