@@ -152,7 +152,7 @@
 	padding: var(--spacing-xs);
 	border-radius: var(--radius-sm);
 	border: 1px solid var(--form-border-color);
-	background-color: var(--form-item-bg-color);
+	background-color: var(--form-bg-color);
 }
 
 .form-item-del-btn {

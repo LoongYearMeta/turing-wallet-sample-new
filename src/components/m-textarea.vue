@@ -33,7 +33,7 @@
 				@click="handleDelete"
 				type="button"
 				class="m-textarea-btn m-textarea-del"
-				:disabled="!value || disabled"
+				:disabled="disabled"
 				aria-label="Clear content"
 			>
 				Delete
@@ -96,11 +96,7 @@ const calculateHeight = () => {
 	if (!textareaRef.value) return;
 
 	// 步骤1：重置高度，获取真实内容高度（scrollHeight）
-	// 先临时移除高度限制，确保能获取真实的scrollHeight
 	textareaRef.value.style.height = 'auto';
-
-	// 强制重排，确保获取准确的scrollHeight（特别是在移动端）
-	textareaRef.value.scrollTop = 0;
 	const scrollHeight = textareaRef.value.scrollHeight;
 
 	// 步骤2：计算实际padding（通过getComputedStyle获取）
@@ -112,9 +108,7 @@ const calculateHeight = () => {
 	const totalPadding = paddingTop + paddingBottom + borderTop + borderBottom;
 
 	// 步骤3：设置基础高度（使用实际计算的padding值）
-	// 如果scrollHeight为0或很小，至少保持min-height
-	const minHeight = parseFloat(computedStyle.minHeight) || 60;
-	const baseHeight = Math.max(scrollHeight + totalPadding, minHeight);
+	const baseHeight = scrollHeight + totalPadding;
 	textareaRef.value.style.height = `${baseHeight}px`;
 
 	// 步骤4：处理最大高度限制（仅当maxHeight为'数字px'时生效）
@@ -138,10 +132,7 @@ const calculateHeight = () => {
 
 // 6. 输入事件处理（同步高度+触发外部事件）
 const handleInput = () => {
-	// 使用nextTick确保DOM更新后再计算高度
-	nextTick(() => {
-		calculateHeight();
-	});
+	calculateHeight();
 	emits('input', value.value);
 };
 
@@ -150,7 +141,7 @@ const handleCopy = async (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-
+	
 	if (!value.value || props.disabled) return;
 
 	try {
@@ -176,7 +167,7 @@ const handleDelete = (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-
+	
 	if (props.disabled) return;
 
 	try {
@@ -195,17 +186,9 @@ watch(
 	() => props.modelValue,
 	(newVal) => {
 		value.value = newVal;
-		// 使用多重保障确保DOM和样式完全更新后再计算高度
-		// 特别是在移动端和只读模式下的回显场景
+		// 使用nextTick确保DOM更新后再计算高度，特别是对于只读模式下的回显
 		nextTick(() => {
-			nextTick(() => {
-				// 使用requestAnimationFrame确保在下一帧计算（移动端更可靠）
-				requestAnimationFrame(() => {
-					setTimeout(() => {
-						calculateHeight();
-					}, 0);
-				});
-			});
+			calculateHeight();
 		});
 	},
 	{ immediate: true }, // 立即执行一次（初始化时同步）
@@ -216,57 +199,21 @@ watch(value, (newVal) => {
 	emits('update:modelValue', newVal); // 触发双向绑定更新
 });
 
-// 11. 窗口大小变化监听（用于响应式场景）
-let resizeObserver: ResizeObserver | null = null;
-let resizeTimer: NodeJS.Timeout | null = null;
-
-const handleResize = () => {
-	// 防抖处理，避免频繁计算
-	if (resizeTimer) {
-		clearTimeout(resizeTimer);
-	}
-	resizeTimer = setTimeout(() => {
-		calculateHeight();
-	}, 100);
-};
-
-// 12. 组件挂载后初始化高度（使用nextTick确保样式已应用）
+// 11. 组件挂载后初始化高度（使用nextTick确保样式已应用）
 onMounted(() => {
 	nextTick(() => {
-		nextTick(() => {
-			// 延迟执行确保移动端样式完全应用
-			setTimeout(() => {
-				calculateHeight();
-			}, 50);
-		});
+		calculateHeight();
 	});
-
-	// 监听窗口大小变化（移动端切换时）
-	window.addEventListener('resize', handleResize);
-
-	// 使用ResizeObserver监听元素大小变化（更精确）
-	if (textareaRef.value && window.ResizeObserver) {
-		resizeObserver = new ResizeObserver(() => {
-			handleResize();
-		});
-		resizeObserver.observe(textareaRef.value);
-	}
 });
 
-// 13. 组件销毁前清理资源（避免内存泄漏）
+// 12. 组件销毁前清理资源（避免内存泄漏）
 onUnmounted(() => {
 	clearCopyTimer();
-	if (resizeTimer) {
-		clearTimeout(resizeTimer);
-	}
-	if (resizeObserver) {
-		resizeObserver.disconnect();
-	}
-	window.removeEventListener('resize', handleResize);
 });
 </script>
 
 <style scoped>
+@import '@/assets/form-page.css';
 /* 容器样式：相对定位（用于按钮绝对定位） */
 .m-textarea-container {
 	position: relative;
@@ -279,7 +226,7 @@ onUnmounted(() => {
 	justify-content: flex-end;
 	gap: var(--spacing-xs);
 	position: absolute;
-	bottom: var(--spacing-sm);
+	bottom: var(--spacing-xs);
 	right: var(--spacing-xs);
 	z-index: 1;
 }
@@ -288,6 +235,7 @@ onUnmounted(() => {
 .m-textarea {
 	width: 100%;
 	min-height: 60px;
+	padding: var(--spacing-xs);
 	border-radius: var(--radius-sm);
 	border: 1px solid var(--form-border-color);
 	resize: none; /* 禁用手动调整大小 */
@@ -298,8 +246,6 @@ onUnmounted(() => {
 	transition: all 0.2s ease;
 	box-sizing: border-box;
 	overflow-y: hidden; /* 默认隐藏滚动条 */
-	padding: var(--spacing-xs);
-	padding-bottom: var(--spacing-md);
 }
 
 /* 文本域聚焦样式：强化视觉反馈 */
@@ -326,7 +272,7 @@ onUnmounted(() => {
 /* 按钮通用样式：基础样式 */
 .m-textarea-btn {
 	position: static;
-	padding: 4px;
+	padding: 6px 12px;
 	border: none;
 	border-radius: var(--radius-sm);
 	font-size: var(--font-size-small);
@@ -393,16 +339,16 @@ onUnmounted(() => {
 /* 响应式优化 */
 @media (max-width: 768px) {
 	.m-textarea-actions {
-		bottom: var(--spacing-sm);
+		bottom: var(--spacing-xs);
 		right: var(--spacing-xs);
 		gap: 8px;
 	}
-
+	
 	.m-textarea-btn {
 		padding: 5px 10px;
 		font-size: var(--font-size-tiny);
 	}
-
+	
 	.m-textarea {
 		font-size: var(--font-size-small);
 		min-height: 50px;
@@ -414,9 +360,9 @@ onUnmounted(() => {
 		flex-direction: column;
 		gap: 6px;
 		right: var(--spacing-xs);
-		bottom: var(--spacing-sm);
+		bottom: var(--spacing-xs);
 	}
-
+	
 	.m-textarea-btn {
 		padding: 4px 8px;
 		font-size: var(--font-size-tiny);
