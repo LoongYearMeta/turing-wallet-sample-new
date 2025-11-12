@@ -19,6 +19,9 @@
 /* form styles */
 .msg-form {
 	display: flex;
+	flex: 1;
+	min-width: 300px;
+	box-sizing: border-box;
 	flex-direction: column;
 	gap: var(--spacing-md);
 	background-color: var(--form-bg-color);
@@ -128,10 +131,95 @@
 	opacity: 0;
 }
 
+/* input styles */
+.form-item-inputs {
+	display: flex;
+	flex: 1;
+	min-width: 300px;
+	box-sizing: border-box;
+	align-items: center;
+	gap: var(--spacing-xs);
+}
+
+.form-item-label-line {
+	border-bottom: 1px solid var(--form-border-color);
+	padding-bottom: var(--spacing-xs);
+}
+
+.form-item-input {
+	width: 100%;
+	height: 100%;
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--form-item-bg-color);
+}
+
+.form-item-del-btn {
+	background-color: var(--form-btn-error-color);
+	color: #ff4d50;
+	font-size: var(--font-size-body);
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--color-error);
+}
+
+.form-item-del-btn:hover {
+	background-color: #ff4d50;
+	color: var(--color-text-primary);
+	cursor: pointer;
+}
+
+.form-item-btn-container {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+}
+
+.form-item-add-btn {
+	background-color: var(--form-item-bg-color);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-body);
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px dashed var(--form-border-color);
+	cursor: pointer;
+	width: 300px;
+}
+
+.form-item-add-btn:hover {
+	background-color: var(--form-item-bg-hover-color);
+	color: var(--color-text-primary);
+}
+
+.form-item-index {
+	font-size: var(--font-size-body);
+	color: var(--color-text-secondary);
+}
+
+/* cards styles */
+.form-item-cards {
+	display: flex;
+	flex: 1;
+	min-width: 300px;
+	box-sizing: border-box;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--spacing-xs);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-sm);
+	padding: var(--spacing-xs);
+	background-color: var(--form-item-bg-color);
+}
+
+.form-item-card-title {
+	font-size: var(--font-size-body);
+	color: var(--color-text-secondary);
+}
+
 /* textarea styles */
 .form-item-textarea {
 	width: 100%;
-	height: 100%;
 	resize: none;
 	padding: var(--spacing-xs);
 	border-radius: var(--radius-sm);
@@ -155,6 +243,8 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-body);
   transition: all 0.2s ease;
+	flex: 1;
+	max-width: 300px;
 }
 .form-button-submit:disabled {
   cursor: not-allowed;
@@ -175,9 +265,6 @@
 }
 
 /* result textarea styles */
-.form-item-textarea {
-	height: 10rem;
-}
 
 .form-item-result {
   cursor: auto;
@@ -208,4 +295,13 @@
 .error-fade-enter-from,
 .error-fade-leave-to {
   opacity: 0;
+}
+
+.form-container {
+	display: flex;
+	flex-direction: row;
+	gap: var(--spacing-lg);
+	margin: 20px 0;
+	width: 100%;
+	flex-wrap: wrap; /* 允许换行 */
 }

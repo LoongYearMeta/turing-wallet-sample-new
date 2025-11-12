@@ -3,102 +3,96 @@
 		<!-- header -->
 		<h2 class="page-title">Signing Transaction</h2>
 		<p class="page-description">Please input the transaction you want to sign.</p>
-		<!-- 表单区域 -->
-			<!-- form -->
-			<form class="msg-form" @submit.prevent="handleSignTransaction">
-				<!-- form header -->
-				<div class="msg-form-header">
-					<div class="msg-form-title">
-						<svg
-							t="1762498177211"
-							class="icon"
-							viewBox="0 0 1024 1024"
-							version="1.1"
-							xmlns="http://www.w3.org/2000/svg"
-							p-id="8001"
-							width="28"
-							height="28"
-						>
-							<path
-								d="M832.7168 496.2816c-16.9472 0-30.72 13.7728-30.72 30.72v281.1392c0 22.0672-17.9712 40.0384-40.0384 40.0384H223.8976c-22.0672 0-40.0384-17.9712-40.0384-40.0384V230.9632c0-22.0672 17.9712-40.0384 40.0384-40.0384h325.8368c16.9472 0 30.72-13.7728 30.72-30.72s-13.7728-30.72-30.72-30.72H223.8976c-55.9616 0-101.4784 45.5168-101.4784 101.4784v577.1776c0 55.9616 45.5168 101.4784 101.4784 101.4784h538.0608c55.9616 0 101.4784-45.5168 101.4784-101.4784v-281.1392c0-16.9472-13.7728-30.72-30.72-30.72z"
-								fill="#ff8c01"
-								p-id="8002"
-							></path>
-							<path
-								d="M909.2608 210.5856l-73.728-73.728c-25.5488-25.5488-67.072-25.5488-92.5696 0l-313.344 313.2928c-3.8912 3.8912-6.656 8.7552-8.0384 14.08l-40.5504 157.8496a30.67392 30.67392 0 0 0 29.7472 38.3488c2.1504 0 4.3008-0.2048 6.4-0.6656l163.4304-34.9696c5.7856-1.2288 11.1104-4.1472 15.3088-8.3456l313.2928-313.2928c25.5488-25.4976 25.5488-67.0208 0.0512-92.5696z m-350.3616 356.0448l-106.0352 22.6816 26.112-101.632L700.928 265.728l81.7664 77.1584-223.7952 223.744z m306.8928-306.8928l-39.68 39.68-81.7664-77.1584 41.984-41.984a4.096 4.096 0 0 1 5.7344 0l73.728 73.728c1.5872 1.6384 1.5872 4.1984 0 5.7344z"
-								fill="#ff8c01"
-								p-id="8003"
-							></path>
-						</svg>
-						<span>Transaction Form</span>
-					</div>
-					<p class="msg-form-description">Input the transaction you want to sign</p>
+		<!-- form -->
+		<form class="msg-form" @submit.prevent="handleSignTransaction">
+			<!-- form header -->
+			<div class="msg-form-header">
+				<div class="msg-form-title">
+					<svg
+						t="1762498177211"
+						class="icon"
+						viewBox="0 0 1024 1024"
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						p-id="8001"
+						width="28"
+						height="28"
+					>
+						<path
+							d="M832.7168 496.2816c-16.9472 0-30.72 13.7728-30.72 30.72v281.1392c0 22.0672-17.9712 40.0384-40.0384 40.0384H223.8976c-22.0672 0-40.0384-17.9712-40.0384-40.0384V230.9632c0-22.0672 17.9712-40.0384 40.0384-40.0384h325.8368c16.9472 0 30.72-13.7728 30.72-30.72s-13.7728-30.72-30.72-30.72H223.8976c-55.9616 0-101.4784 45.5168-101.4784 101.4784v577.1776c0 55.9616 45.5168 101.4784 101.4784 101.4784h538.0608c55.9616 0 101.4784-45.5168 101.4784-101.4784v-281.1392c0-16.9472-13.7728-30.72-30.72-30.72z"
+							fill="#ff8c01"
+							p-id="8002"
+						></path>
+						<path
+							d="M909.2608 210.5856l-73.728-73.728c-25.5488-25.5488-67.072-25.5488-92.5696 0l-313.344 313.2928c-3.8912 3.8912-6.656 8.7552-8.0384 14.08l-40.5504 157.8496a30.67392 30.67392 0 0 0 29.7472 38.3488c2.1504 0 4.3008-0.2048 6.4-0.6656l163.4304-34.9696c5.7856-1.2288 11.1104-4.1472 15.3088-8.3456l313.2928-313.2928c25.5488-25.4976 25.5488-67.0208 0.0512-92.5696z m-350.3616 356.0448l-106.0352 22.6816 26.112-101.632L700.928 265.728l81.7664 77.1584-223.7952 223.744z m306.8928-306.8928l-39.68 39.68-81.7664-77.1584 41.984-41.984a4.096 4.096 0 0 1 5.7344 0l73.728 73.728c1.5872 1.6384 1.5872 4.1984 0 5.7344z"
+							fill="#ff8c01"
+							p-id="8003"
+						></path>
+					</svg>
+					<span>Transaction Form</span>
 				</div>
-				<!-- txraws 输入区域 -->
-				<div class="form-item">
-					<label class="form-item-label-line">txraws</label>
-					<div class="form-container">
-						<div class="form-item-inputs" v-for="i in 10">
-						<span class="form-item-index">
-							{{ i }}.
-						</span>
-						<input
-							class="form-item-input"
-							:key="i"
-							v-model="tx_raws"
-							placeholder='Please input txraws as JSON array, e.g. ["raw1","raw2"]'
-							:id="`tx_raws_${i}`"
-						></input>
-						<button class="form-item-del-btn">
-							del
-						</button>
-					</div>
-					</div>
-					<div class="form-item-btn-container">
-						<button class="form-item-add-btn">+</button>
-					</div>
-				</div>
-			<!-- UTXO Details 输入区域 -->
-			 <div class="form-item">
-					<label class="form-item-label-line">UTXO Details</label>
-					<div class="form-container">
-						<div class="form-item-cards" v-for="i in 10">
-							<span class="form-item-card-title">
-								UTXO {{ i }}
-							</span>
-							<!-- utxos_satoshis 输入区域 -->
-							<input
-								class="form-item-input"
-								:key="i"
-								v-model="tx_raws"
-								placeholder='Please input txraws as JSON array, e.g. ["raw1","raw2"]'
-								:id="`tx_raws_${i}`"
-							></input>
-							<!-- script_pubkeys 输入区域 -->
-							<input
-								class="form-item-input"
-								:key="i"
-								v-model="tx_raws"
-								placeholder='Please input txraws as JSON array, e.g. ["raw1","raw2"]'
-								:id="`tx_raws_${i}`"
-							></input>
-						</div>
-					</div>
-				</div>
-				<div class="form-item-btn-container">
-					<button
-					class="form-button-submit"
-					type="button"
-				>
-					Decrypt Message
-				</button>
-				</div>
-			</form>
-		</div>
-
-
-	<!-- result -->
-	<!-- <div class="msg-form msg-result">
+				<p class="msg-form-description">Input the transaction you want to sign</p>
+			</div>
+			<!-- form content -->
+			<!-- input txraws -->
+			<div class="form-item">
+				<label for="tx_raws">txraws</label>
+				<textarea
+					class="form-item-textarea"
+					v-model="tx_raws"
+					placeholder='Please input txraws as JSON array, e.g. ["raw1","raw2"]'
+					id="tx_raws"
+				></textarea>
+				<!-- error message -->
+				<Transition name="error-fade">
+					<p class="form-item-error" v-if="errors.tx_raws">
+						{{ errors.tx_raws }}
+					</p>
+				</Transition>
+			</div>
+			<!-- input utxos_satoshis -->
+			<div class="form-item">
+				<label for="utxos_satoshis">utxos_satoshis</label>
+				<textarea
+					class="form-item-textarea"
+					v-model="utxos_satoshis"
+					placeholder="Please input utxos_satoshis (JSON array of arrays)"
+					id="utxos_satoshis"
+				></textarea>
+				<!-- error message -->
+				<Transition name="error-fade">
+					<p class="form-item-error" v-if="errors.utxos_satoshis">
+						{{ errors.utxos_satoshis }}
+					</p>
+				</Transition>
+			</div>
+			<!-- input script_pubkeys -->
+			<div class="form-item">
+				<label for="script_pubkeys">script_pubkeys</label>
+				<textarea
+					class="form-item-textarea"
+					v-model="script_pubkeys"
+					placeholder="Please input script_pubkeys (JSON array of arrays)"
+					id="script_pubkeys"
+				></textarea>
+				<!-- error message -->
+				<Transition name="error-fade">
+					<p class="form-item-error" v-if="errors.script_pubkeys">
+						{{ errors.script_pubkeys }}
+					</p>
+				</Transition>
+			</div>
+			<button
+				class="form-button-submit"
+				@click.stop="handleSignTransaction"
+				type="button"
+				:disabled="!isFormValid"
+			>
+				Sign Transaction
+			</button>
+		</form>
+		<!-- result -->
+		<div class="msg-form msg-result">
 			<div class="msg-form-header">
 				<div class="msg-form-title">
 					<svg
@@ -128,7 +122,8 @@
 				@click="handleCopy"
 				autosize
 			></textarea>
-		</div> -->
+		</div>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -207,9 +202,11 @@ const parseUtxosSatoshis = (input: string): ParseRes<number[][]> => {
 		// 子数组校验：必须是数组 + 非空数组 + 元素是数字（非NaN）
 		const allNumberArrays = parsed.every(
 			(subArr) =>
-				Array.isArray(subArr) && subArr.every((item) => typeof item === 'number' && !isNaN(item)),
+				Array.isArray(subArr) &&
+				subArr.every((item) => typeof item === 'number' && !isNaN(item)),
 		);
-		if (!allNumberArrays) return { valid: false, error: 'Sub arrays must contain only numbers' };
+		if (!allNumberArrays)
+			return { valid: false, error: 'Sub arrays must contain only numbers' };
 		return { valid: true, data: parsed };
 	} catch (error) {
 		// JSON解析错误
@@ -234,9 +231,12 @@ const parseScriptPubkeys = (input: string): ParseRes<string[][]> => {
 		if (parsed.length === 0) return { valid: false, error: 'Array cannot be empty' };
 		// 子数组校验：必须是数组 + 非空数组 + 元素是字符串
 		const allStringArrays = parsed.every(
-			(subArr) => Array.isArray(subArr) && subArr.every((item) => typeof item === 'string'),
+			(subArr) =>
+				Array.isArray(subArr) &&
+				subArr.every((item) => typeof item === 'string'),
 		);
-		if (!allStringArrays) return { valid: false, error: 'Sub arrays must contain only strings' };
+		if (!allStringArrays)
+			return { valid: false, error: 'Sub arrays must contain only strings' };
 		return { valid: true, data: parsed };
 	} catch (err) {
 		return { valid: false, error: 'Invalid JSON format' };
@@ -297,7 +297,7 @@ const handleSignTransaction = async () => {
 	// 签名交易
 	try {
 		// 转换后的数据（类型安全，可直接传递给接口）
-		// 对交易进行签名（兼容新旧钱包返回：优先 sigs，缺失则尝试 sig）
+    // 对交易进行签名（兼容新旧钱包返回：优先 sigs，缺失则尝试 sig）
 		const requestData = {
 			txraws: txRawsResult.data!,
 			utxos_satoshis: utxosResult.data!,
@@ -305,7 +305,7 @@ const handleSignTransaction = async () => {
 		};
 		// 签名交易
 		const signRes: any = await window.Turing.signTransaction(requestData);
-		// let sigInput: string[] = [];
+    // let sigInput: string[] = [];
 		// try {
 		// 	if (signRes && signRes.sigs) {
 		// 		const sigs = signRes.sigs;
@@ -317,7 +317,7 @@ const handleSignTransaction = async () => {
 		// 	if (!sigInput || sigInput.length === 0) {
 		// 		throw new Error('签名数据为空');
 		// 	}
-		// } catch (e) {
+    // } catch (e) {
 		// 	throw new Error('交易签名失败：未获取到有效签名（兼容sigs/sig均失败）');
 		// }
 		// 格式化结果（美化JSON）

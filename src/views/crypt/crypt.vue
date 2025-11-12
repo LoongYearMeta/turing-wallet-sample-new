@@ -251,17 +251,5 @@ onMounted(async () => {
 .msg-result {
 	margin-top: 0;
 }
-.form-container {
-	display: flex;
-	flex-direction: row;
-	gap: var(--spacing-lg);
-	margin: 20px 0;
-	width: 100%;
-	flex-wrap: wrap; /* 允许换行 */
-}
-.msg-form {
-	flex: 1;
-	min-width: 300px;
-	box-sizing: border-box;
-}
+
 </style>

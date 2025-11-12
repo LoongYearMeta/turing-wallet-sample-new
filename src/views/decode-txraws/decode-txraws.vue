@@ -45,7 +45,9 @@
 					id="txraw"
 				></textarea>
 			</div>
-			<button class="form-button-submit" @click.stop="handleDecodeTxraws" type="button" :disabled="!txraw">Decode Txraw</button>
+			<div class="form-item-btn-container">
+				<button class="form-button-submit" @click.stop="handleDecodeTxraws" type="button" :disabled="!txraw">Decode Txraw</button>
+			</div>
 		</form>
 		<!-- result -->
 		<div class="msg-form msg-result">

@@ -30,6 +30,8 @@
   --color-success: #51cf66;
   --color-warning: #ffa500;
   --color-info: #409eff;
+  --color-error-hover: #ff4d4f80;
+  --color-error-disabled: #ff4d4f40;
 
   /* Design Tokens - Layout Sizes */
   --sidebar-width: 300px;
@@ -66,6 +68,9 @@
   --form-item-bg-color: #2d2d2d;
   --form-item-bg-hover-color: #3b3b3b;
   --form-placeholder-color: #9299a3;
+  --form-btn-error-color: #ff4d5023;
+  --form-btn-disabled-color: #b2b0b03e;
+  --form-btn-primary-color: #ff8c0023;
 
   color-scheme: dark;
   color: var(--color-text-primary);
@@ -137,7 +142,7 @@ button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: var(--font-size-body);
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
