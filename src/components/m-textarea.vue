@@ -98,7 +98,7 @@ const calculateHeight = () => {
 	// 步骤1：重置高度，获取真实内容高度（scrollHeight）
 	// 先临时移除高度限制，确保能获取真实的scrollHeight
 	textareaRef.value.style.height = 'auto';
-	
+
 	// 强制重排，确保获取准确的scrollHeight（特别是在移动端）
 	textareaRef.value.scrollTop = 0;
 	const scrollHeight = textareaRef.value.scrollHeight;
@@ -150,7 +150,7 @@ const handleCopy = async (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-	
+
 	if (!value.value || props.disabled) return;
 
 	try {
@@ -176,7 +176,7 @@ const handleDelete = (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-	
+
 	if (props.disabled) return;
 
 	try {
@@ -243,7 +243,7 @@ onMounted(() => {
 
 	// 监听窗口大小变化（移动端切换时）
 	window.addEventListener('resize', handleResize);
-	
+
 	// 使用ResizeObserver监听元素大小变化（更精确）
 	if (textareaRef.value && window.ResizeObserver) {
 		resizeObserver = new ResizeObserver(() => {
@@ -289,7 +289,6 @@ onUnmounted(() => {
 .m-textarea {
 	width: 100%;
 	min-height: 60px;
-	padding: var(--spacing-xs);
 	border-radius: var(--radius-sm);
 	border: 1px solid var(--form-border-color);
 	resize: none; /* 禁用手动调整大小 */
@@ -326,7 +325,7 @@ onUnmounted(() => {
 /* 按钮通用样式：基础样式 */
 .m-textarea-btn {
 	position: static;
-	padding: 6px 12px;
+	padding: 4px;
 	border: none;
 	border-radius: var(--radius-sm);
 	font-size: var(--font-size-small);
@@ -397,12 +396,12 @@ onUnmounted(() => {
 		right: var(--spacing-xs);
 		gap: 8px;
 	}
-	
+
 	.m-textarea-btn {
 		padding: 5px 10px;
 		font-size: var(--font-size-tiny);
 	}
-	
+
 	.m-textarea {
 		font-size: var(--font-size-small);
 		min-height: 50px;
@@ -416,7 +415,7 @@ onUnmounted(() => {
 		right: var(--spacing-xs);
 		bottom: var(--spacing-sm);
 	}
-	
+
 	.m-textarea-btn {
 		padding: 4px 8px;
 		font-size: var(--font-size-tiny);

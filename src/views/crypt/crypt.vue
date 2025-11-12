@@ -35,27 +35,25 @@
 					<p class="msg-form-description">Input the message you want to encrypt</p>
 				</div>
 				<!-- form content -->
-				<div class="form-item">
-					<textarea
-						class="form-item-textarea"
-						v-model="encryptMessage"
-						placeholder="Enter message to encrypt"
-					></textarea>
-					<!-- error message -->
-					<!-- <Transition name="error-fade">
-						<p class="form-item-error" v-if="!encryptMessage.trim()">
-							Please enter a message to encrypt
-						</p>
-					</Transition> -->
+				<!-- <div class="form-item"> -->
+				<MyTextarea
+					v-model="encryptMessage"
+					placeholder="Please input message to sign"
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
+				<!-- </div> -->
+				<div class="form-item-btn-container">
+					<button
+						class="form-button-submit"
+						@click.stop="handleEncryptMessage"
+						type="button"
+						:disabled="!encryptMessage"
+					>
+						Encrypt Message
+					</button>
 				</div>
-				<button
-					class="form-button-submit"
-					@click.stop="handleEncryptMessage"
-					type="button"
-					:disabled="!encryptMessage"
-				>
-					Encrypt Message
-				</button>
 				<!-- encrypt result -->
 				<div class="msg-form-header">
 					<div class="msg-form-title">
@@ -79,14 +77,13 @@
 					</div>
 					<!-- <p class="msg-form-description">Input the message you want to encrypt</p> -->
 				</div>
-				<textarea
-					class="form-item-textarea form-item-result"
+				<MyTextarea
 					v-model="encryptResult"
-					readonly
 					placeholder="Encrypted result will be displayed here"
-					autosize
-          @click="copyMessage"
-				></textarea>
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
 			</form>
 			<!-- decrypt form -->
 			<form class="msg-form decrypt-form" @submit.prevent="handleDecryptMessage">
@@ -119,27 +116,31 @@
 					<p class="msg-form-description">Input the message you want to decrypt</p>
 				</div>
 				<!-- form content -->
-				<div class="form-item">
-					<textarea
-						class="form-item-textarea"
-						v-model="decryptMessage"
-						placeholder="Enter message to decrypt"
-					></textarea>
-          <!-- error message -->
-					<!-- <Transition name="error-fade">
+				<!-- <div class="form-item"> -->
+				<MyTextarea
+					v-model="decryptMessage"
+					placeholder="Please input encrypted message to decrypt"
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
+				<!-- error message -->
+				<!-- <Transition name="error-fade">
 						<p class="form-item-error" v-if="!decryptMessage.trim()">
 							Please enter a message to decrypt
 						</p>
 					</Transition> -->
+				<!-- </div> -->
+				<div class="form-item-btn-container">
+					<button
+						class="form-button-submit"
+						@click.stop="handleDecryptMessage"
+						type="button"
+						:disabled="!decryptMessage"
+					>
+						Decrypt Message
+					</button>
 				</div>
-				<button
-					class="form-button-submit"
-					@click.stop="handleDecryptMessage"
-					type="button"
-					:disabled="!decryptMessage"
-				>
-					Decrypt Message
-				</button>
 				<!-- dncrypt result -->
 				<div class="msg-form-header">
 					<div class="msg-form-title">
@@ -163,14 +164,13 @@
 					</div>
 					<!-- <p class="msg-form-description">Input the message you want to encrypt</p> -->
 				</div>
-				<textarea
-					class="form-item-textarea form-item-result"
+				<MyTextarea
 					v-model="decryptResult"
-					readonly
 					placeholder="Decrypted result will be displayed here"
-					autosize
-          @click="copyMessage"
-				></textarea>
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
 			</form>
 		</div>
 	</div>
@@ -180,6 +180,7 @@
 import { ref, onMounted } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
+import MyTextarea from '../../components/m-textarea.vue';
 // import { storeToRefs } from 'pinia'
 
 // 钱包状态管理
@@ -196,12 +197,6 @@ const decryptMessage = ref('');
 // 表单结果
 const encryptResult = ref('');
 const decryptResult = ref('');
-
-// 复制消息
-const copyMessage = () => {
-	navigator.clipboard.writeText(encryptResult.value);
-	toastApi.showSuccess('Copied to clipboard', 3000);
-};
 
 // 加密消息
 const handleEncryptMessage = async () => {
@@ -251,5 +246,4 @@ onMounted(async () => {
 .msg-result {
 	margin-top: 0;
 }
-
 </style>

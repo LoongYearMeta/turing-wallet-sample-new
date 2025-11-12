@@ -2,9 +2,7 @@
 	<div class="message-signing-page">
 		<!-- header -->
 		<h2 class="page-title">Decode Txraws</h2>
-		<p class="page-description">
-			Please enter a txraw you want to decode.
-		</p>
+		<p class="page-description">Please enter a txraw you want to decode.</p>
 		<!-- form -->
 		<form class="msg-form" @submit.prevent="handleDecodeTxraws">
 			<!-- form header -->
@@ -36,17 +34,25 @@
 				<p class="msg-form-description">Enter the txraw you want to decode</p>
 			</div>
 			<!-- txraw input textarea -->
-			<div class="form-item">
-				<!-- <label for="message">Message</label> -->
-				<textarea
-					class="form-item-textarea"
-					v-model="txraw"
-					placeholder="Please input txraw to decode"
-					id="txraw"
-				></textarea>
-			</div>
+			<!-- <div class="form-item"> -->
+			<!-- <label for="message">Message</label> -->
+			<MyTextarea
+				v-model="txraw"
+				placeholder="Please input txraw to decode"
+				:readonly="false"
+				:copyable="true"
+				:deletable="true"
+			/>
+			<!-- </div> -->
 			<div class="form-item-btn-container">
-				<button class="form-button-submit" @click.stop="handleDecodeTxraws" type="button" :disabled="!txraw">Decode Txraw</button>
+				<button
+					class="form-button-submit"
+					@click.stop="handleDecodeTxraws"
+					type="button"
+					:disabled="!txraw"
+				>
+					Decode Txraw
+				</button>
 			</div>
 		</form>
 		<!-- result -->
@@ -72,14 +78,13 @@
 					<span>Txraw Decoded Result</span>
 				</div>
 			</div>
-			<textarea
-				class="form-item-textarea form-item-result"
+			<MyTextarea
 				v-model="decodedTxraw"
-				readonly
-				placeholder="Please input txraw to decode first"
-        @click="handleCopy"
-				autosize
-			></textarea>
+				placeholder="Txraw decoded result will be displayed here"
+				:readonly="false"
+				:copyable="true"
+				:deletable="true"
+			/>
 		</div>
 	</div>
 </template>
@@ -89,11 +94,12 @@ import { ref, onMounted } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import * as tbc from 'tbc-lib-js';
+import MyTextarea from '../../components/m-textarea.vue';
 // import { storeToRefs } from 'pinia'
 
 // 钱包状态管理
-const walletStore = useWalletStore()
-const { getWalletInfo } = walletStore
+const walletStore = useWalletStore();
+const { getWalletInfo } = walletStore;
 
 // 消息提示
 const toastApi = useToast();
@@ -110,7 +116,7 @@ const handleDecodeTxraws = async () => {
 		return;
 	}
 	try {
-    const transaction = new tbc.Transaction(txraw.value);
+		const transaction = new tbc.Transaction(txraw.value);
 		const response = transaction.toObject();
 		decodedTxraw.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('Txraw decoded successfully', 3000);
@@ -128,9 +134,8 @@ const handleCopy = () => {
 };
 // 检查钱包连接状态
 onMounted(async () => {
-  await getWalletInfo()
-})
-
+	await getWalletInfo();
+});
 </script>
 
 <style scoped>

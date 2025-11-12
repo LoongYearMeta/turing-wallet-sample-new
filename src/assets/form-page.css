@@ -222,6 +222,7 @@
 	width: 100%;
 	resize: none;
 	padding: var(--spacing-xs);
+	padding-bottom: var(--spacing-md);
 	border-radius: var(--radius-sm);
 	border: 1px solid var(--form-border-color);
 	background-color: var(--form-item-bg-color);
