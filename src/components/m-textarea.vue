@@ -267,7 +267,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import '@/assets/form-page.css';
 /* 容器样式：相对定位（用于按钮绝对定位） */
 .m-textarea-container {
 	position: relative;
@@ -299,6 +298,8 @@ onUnmounted(() => {
 	transition: all 0.2s ease;
 	box-sizing: border-box;
 	overflow-y: hidden; /* 默认隐藏滚动条 */
+	padding: var(--spacing-xs);
+	padding-bottom: var(--spacing-md);
 }
 
 /* 文本域聚焦样式：强化视觉反馈 */
