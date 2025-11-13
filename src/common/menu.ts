@@ -18,6 +18,7 @@ export const appMenu: MenuItem[] = [
     children: [
       { path: '/exchange/crypt', label: 'Encrypt/Decrypt' },
       { path: '/exchange/asm-hex', label: 'ASM <-> HEX' },
+      { path: '/exchange/calc-hex', label: 'Script Hash' },
     ],
   },
   { path: '/decode-txraws', label: 'Decode Txraws' },

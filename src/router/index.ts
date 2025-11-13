@@ -59,6 +59,14 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/exchange/calc-hex',
+    name: 'ExchangeCalcHex',
+    component: () => import('../views/exchange/calcHex.vue'),
+    meta: {
+      title: 'Script Hash'
+    }
+  },
+  {
     path: '/crypt',
     redirect: '/exchange/crypt'
   },

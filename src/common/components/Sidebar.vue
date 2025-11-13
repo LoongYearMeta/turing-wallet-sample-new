@@ -211,6 +211,10 @@ const menuItems: MenuItem[] = [
 				path: '/exchange/asm-hex',
 				label: 'ASM <-> HEX',
 			},
+			{
+				path: '/exchange/calc-hex',
+				label: 'Script Hash',
+			},
 		],
 	},
 	{
