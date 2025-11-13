@@ -7,20 +7,6 @@
 				<p class="page-description">Create collection, create NFT, or transfer NFT using the form below.</p>
 			</div>
 			<router-link to="/records" class="history-link">
-				<svg
-					t="1762506088732"
-					class="icon"
-					viewBox="0 0 1024 1024"
-					version="1.1"
-					xmlns="http://www.w3.org/2000/svg"
-					width="20"
-					height="20"
-				>
-					<path
-						d="M464.896 134.912c78.848-71.5776 200.192-86.4768 297.5232-36.352 98.5088 50.7904 152.6272 151.4496 137.4208 255.6416-23.04 156.3136-169.3184 247.9616-329.0112 204.7488-25.0368-6.7584-42.2912-3.7376-58.0608 17.2032-18.8928 25.088-41.216 47.9232-62.8736 72.704 9.3184 8.704 16.64 15.1552 23.552 21.8112 33.3824 32.5632 37.5296 70.2464 11.0592 101.0688-25.7536 30.0032-66.56 33.1264-104.8576 7.3216-16.1792-11.0592-32-29.2864-44.544 2.6624 51.0976 58.0608 59.392 90.6752 31.6928 123.1872-29.2864 34.2528-65.536 31.5904-133.8368-10.752-3.6864 2.2528-8.0384 4.4544-12.032 7.2192-41.984 28.672-76.8 28.416-104.2432-1.024-28.4672-30.464-27.8528-68.608 4.3008-105.0624a23307.264 23307.264 0 0 1 276.736-310.1696c20.736-22.6816 22.528-39.7824 9.0112-66.9184C359.2192 322.2528 384 208.4864 464.896 134.912z m193.4336 71.168c-70.0416-9.9328-134.656 36.9152-144.384 104.7552-10.2912 70.4512 38.8608 138.2912 107.2128 148.5824 70.656 10.6496 135.0656-37.5808 145.664-109.056 10.7008-73.3696-34.56-133.4272-108.544-144.2304z"
-						fill="#ff8c01"
-					></path>
-				</svg>
 				<span>View History</span>
 			</router-link>
 		</div>
@@ -1010,25 +996,23 @@ onMounted(async () => {
 }
 
 .function-toggle {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: var(--spacing-sm);
 	margin-bottom: var(--spacing-lg);
 	background-color: var(--form-bg-color);
 	border: 1px solid var(--form-border-color);
 	border-radius: var(--radius-md);
 	padding: var(--spacing-xs);
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none; /* Firefox */
-}
-
-.function-toggle::-webkit-scrollbar {
-	display: none; /* Chrome, Safari, Edge */
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .toggle-btn {
-	flex: 1;
-	min-width: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
 	padding: var(--spacing-sm) var(--spacing-md);
 	border: none;
 	border-radius: var(--radius-sm);
@@ -1039,7 +1023,6 @@ onMounted(async () => {
 	cursor: pointer;
 	transition: all 0.2s ease;
 	white-space: nowrap;
-	flex-shrink: 0;
 }
 
 .toggle-btn:hover {
@@ -1144,6 +1127,7 @@ onMounted(async () => {
 /* 移动端响应式优化 */
 @media (max-width: 768px) {
 	.function-toggle {
+		display: flex;
 		gap: var(--spacing-xs);
 		padding: var(--spacing-xs);
 		overflow-x: auto;
@@ -1153,7 +1137,6 @@ onMounted(async () => {
 	
 	.toggle-btn {
 		flex: 1;
-		min-width: 0;
 		padding: var(--spacing-xs) var(--spacing-sm);
 		font-size: var(--font-size-small);
 		font-weight: 500;
