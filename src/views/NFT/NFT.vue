@@ -32,21 +32,24 @@
 				:class="{ active: currentFunction === 'COLLECTION_CREATE' }"
 				@click="currentFunction = 'COLLECTION_CREATE'"
 			>
-				COLLECTION_CREATE
+				<span class="toggle-btn-text-full">COLLECTION_CREATE</span>
+				<span class="toggle-btn-text-short">COLLECTION</span>
 			</button>
 			<button
 				class="toggle-btn"
 				:class="{ active: currentFunction === 'NFT_CREATE' }"
 				@click="currentFunction = 'NFT_CREATE'"
 			>
-				NFT_CREATE
+				<span class="toggle-btn-text-full">NFT_CREATE</span>
+				<span class="toggle-btn-text-short">CREATE</span>
 			</button>
 			<button
 				class="toggle-btn"
 				:class="{ active: currentFunction === 'NFT_TRANSFER' }"
 				@click="currentFunction = 'NFT_TRANSFER'"
 			>
-				NFT_TRANSFER
+				<span class="toggle-btn-text-full">NFT_TRANSFER</span>
+				<span class="toggle-btn-text-short">TRANSFER</span>
 			</button>
 		</div>
 
@@ -1012,10 +1015,18 @@ onMounted(async () => {
 	border: 1px solid var(--form-border-color);
 	border-radius: var(--radius-md);
 	padding: var(--spacing-xs);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none; /* Firefox */
+}
+
+.function-toggle::-webkit-scrollbar {
+	display: none; /* Chrome, Safari, Edge */
 }
 
 .toggle-btn {
 	flex: 1;
+	min-width: 0;
 	padding: var(--spacing-sm) var(--spacing-md);
 	border: none;
 	border-radius: var(--radius-sm);
@@ -1025,6 +1036,8 @@ onMounted(async () => {
 	font-weight: 500;
 	cursor: pointer;
 	transition: all 0.2s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .toggle-btn:hover {
@@ -1036,6 +1049,10 @@ onMounted(async () => {
 	background-color: var(--color-primary);
 	color: white;
 	font-weight: 600;
+}
+
+.toggle-btn-text-short {
+	display: none;
 }
 
 .required {
@@ -1120,5 +1137,68 @@ onMounted(async () => {
 	margin-top: var(--spacing-xs);
 	font-size: var(--font-size-small);
 	color: var(--color-text-secondary);
+}
+
+/* 移动端响应式优化 */
+@media (max-width: 768px) {
+	.function-toggle {
+		gap: var(--spacing-xs);
+		padding: var(--spacing-xs);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scroll-snap-type: x proximity;
+	}
+	
+	.toggle-btn {
+		flex: 1;
+		min-width: 0;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-small);
+		font-weight: 500;
+		scroll-snap-align: start;
+	}
+	
+	.toggle-btn-text-full {
+		display: none;
+	}
+	
+	.toggle-btn-text-short {
+		display: inline;
+	}
+	
+	.page-header {
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		align-items: flex-start;
+	}
+	
+	.history-link {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 480px) {
+	.function-toggle {
+		gap: 4px;
+		padding: 4px;
+	}
+	
+	.toggle-btn {
+		flex: 1;
+		padding: 8px 6px;
+		font-size: 10px;
+		font-weight: 500;
+		letter-spacing: -0.2px;
+		min-width: 0;
+	}
+	
+	.page-title {
+		font-size: 1.5rem;
+	}
+	
+	.page-description {
+		font-size: var(--font-size-small);
+	}
 }
 </style>
