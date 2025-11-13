@@ -69,7 +69,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/ft',
     name: 'FT',
-    component: () => import('../views/FT.vue'),
+    component: () => import('../views/FT/FT.vue'),
     meta: {
       title: 'FT'
     }
@@ -77,7 +77,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/nft',
     name: 'NFT',
-    component: () => import('../views/NFT.vue'),
+    component: () => import('../views/NFT/NFT.vue'),
     meta: {
       title: 'NFT'
     }

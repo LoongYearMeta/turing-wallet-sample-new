@@ -76,6 +76,13 @@ declare global {
 			 * @returns 包含解密结果的对象
 			 */
 			decrypt(params: { message: string }): Promise<{ message: string }>;
+
+			/**
+			 * 发送交易
+			 * @param params 交易参数数组
+			 * @returns 包含 txid 的对象
+			 */
+			sendTransaction(params: any[]): Promise<{ txid: string } | any>;
 		};
 	}
 }
