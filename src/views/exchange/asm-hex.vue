@@ -1,12 +1,11 @@
 <template>
 	<div class="message-signing-page">
 		<!-- page header -->
-		<h2 class="page-title">Encrypt/Decrypt Demo</h2>
-		<p class="page-description">Please input the message you want to encrypt/decrypt.</p>
+		<h2 class="page-title">ASM <-> HEX Converter</h2>
+		<p class="page-description">Convert scripts between ASM and HEX formats using Turing Wallet tooling.</p>
 		<div class="form-container">
-			<!-- encrypt form -->
-			<form class="msg-form" @submit.prevent="handleEncryptMessage">
-				<!-- form header -->
+			<!-- ASM to HEX -->
+			<form class="msg-form" @submit.prevent="handleAsmToHex">
 				<div class="msg-form-header">
 					<div class="msg-form-title">
 						<svg
@@ -30,32 +29,28 @@
 								p-id="8003"
 							></path>
 						</svg>
-						<span>Encrypt Form</span>
+						<span>ASM -> HEX</span>
 					</div>
-					<p class="msg-form-description">Input the message you want to encrypt</p>
+					<p class="msg-form-description">Paste an ASM script to convert it into HEX format</p>
 				</div>
-				<!-- form content -->
-				<!-- <div class="form-item"> -->
 				<MyTextarea
-					v-model="encryptMessage"
-					placeholder="Please input message to sign"
+					v-model="asmInput"
+					placeholder="e.g. OP_DUP OP_HASH160 6dd43d1c7260264b3ea573fe77a464e7a0ceaac9 OP_EQUALVERIFY OP_CHECKSIG"
 					:readonly="false"
 					:copyable="true"
 					:deletable="true"
 				/>
-				<!-- </div> -->
 				<div class="form-item-btn-container">
 					<button
 						class="form-button-submit"
-						@click.stop="handleEncryptMessage"
+						@click.stop="handleAsmToHex"
 						type="button"
-						:disabled="!encryptMessage || isEncrypting"
+						:disabled="!asmInput || isConvertingAsm"
 					>
-						<span v-if="isEncrypting">Encrypting...</span>
-						<span v-else>Encrypt Message</span>
+						<span v-if="isConvertingAsm">Converting...</span>
+						<span v-else>Convert to HEX</span>
 					</button>
 				</div>
-				<!-- encrypt result -->
 				<div class="msg-form-header">
 					<div class="msg-form-title">
 						<svg
@@ -74,21 +69,19 @@
 								p-id="21590"
 							></path>
 						</svg>
-						<span>Encrypt Result</span>
+						<span>HEX Result</span>
 					</div>
-					<!-- <p class="msg-form-description">Input the message you want to encrypt</p> -->
 				</div>
 				<MyTextarea
-					v-model="encryptResult"
-					placeholder="Encrypted result will be displayed here"
+					v-model="hexResult"
+					placeholder="Converted HEX script will appear here"
 					:readonly="false"
 					:copyable="true"
 					:deletable="true"
 				/>
 			</form>
-			<!-- decrypt form -->
-			<form class="msg-form decrypt-form" @submit.prevent="handleDecryptMessage">
-				<!-- form header -->
+			<!-- HEX to ASM -->
+			<form class="msg-form decrypt-form" @submit.prevent="handleHexToAsm">
 				<div class="msg-form-header">
 					<div class="msg-form-title">
 						<svg
@@ -112,38 +105,28 @@
 								p-id="8003"
 							></path>
 						</svg>
-						<span>Decrypt Form</span>
+						<span>HEX -> ASM</span>
 					</div>
-					<p class="msg-form-description">Input the message you want to decrypt</p>
+					<p class="msg-form-description">Paste a HEX script to convert it into ASM format</p>
 				</div>
-				<!-- form content -->
-				<!-- <div class="form-item"> -->
 				<MyTextarea
-					v-model="decryptMessage"
-					placeholder="Please input encrypted message to decrypt"
+					v-model="hexInput"
+					placeholder="e.g. 7cc6201e72fd08646906f88a51f083ef6375c2ccf5002ee2221b6f876e6ed79e"
 					:readonly="false"
 					:copyable="true"
 					:deletable="true"
 				/>
-				<!-- error message -->
-				<!-- <Transition name="error-fade">
-						<p class="form-item-error" v-if="!decryptMessage.trim()">
-							Please enter a message to decrypt
-						</p>
-					</Transition> -->
-				<!-- </div> -->
 				<div class="form-item-btn-container">
 					<button
 						class="form-button-submit"
-						@click.stop="handleDecryptMessage"
+						@click.stop="handleHexToAsm"
 						type="button"
-						:disabled="!decryptMessage || isDecrypting"
+						:disabled="!hexInput || isConvertingHex"
 					>
-						<span v-if="isDecrypting">Decrypting...</span>
-						<span v-else>Decrypt Message</span>
+						<span v-if="isConvertingHex">Converting...</span>
+						<span v-else>Convert to ASM</span>
 					</button>
 				</div>
-				<!-- dncrypt result -->
 				<div class="msg-form-header">
 					<div class="msg-form-title">
 						<svg
@@ -162,13 +145,12 @@
 								p-id="21590"
 							></path>
 						</svg>
-						<span>Decrypt Result</span>
+						<span>ASM Result</span>
 					</div>
-					<!-- <p class="msg-form-description">Input the message you want to encrypt</p> -->
 				</div>
 				<MyTextarea
-					v-model="decryptResult"
-					placeholder="Decrypted result will be displayed here"
+					v-model="asmResult"
+					placeholder="Converted ASM script will appear here"
 					:readonly="false"
 					:copyable="true"
 					:deletable="true"
@@ -183,7 +165,7 @@ import { ref, onMounted } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import MyTextarea from '../../components/m-textarea.vue';
-// import { storeToRefs } from 'pinia'
+import * as tbc from 'tbc-lib-js';
 
 // 钱包状态管理
 const walletStore = useWalletStore();
@@ -192,63 +174,58 @@ const { getWalletInfo } = walletStore;
 // 消息提示
 const toastApi = useToast();
 
-// 提交状态
-const isEncrypting = ref(false);
-const isDecrypting = ref(false);
+// ASM -> HEX
+const asmInput = ref('');
+const hexResult = ref('');
+const isConvertingAsm = ref(false);
 
-// 表单输入数据
-const encryptMessage = ref('');
-const decryptMessage = ref('');
+// HEX -> ASM
+const hexInput = ref('');
+const asmResult = ref('');
+const isConvertingHex = ref(false);
 
-// 表单结果
-const encryptResult = ref('');
-const decryptResult = ref('');
-
-// 加密消息
-const handleEncryptMessage = async () => {
-	if (!encryptMessage.value) {
-		toastApi.showError('Please enter a message to encrypt', 3000);
+const handleAsmToHex = async () => {
+	if (!asmInput.value || !asmInput.value.trim()) {
+		toastApi.showError('Please enter an ASM script to convert', 3000);
 		return;
 	}
-	
-	isEncrypting.value = true;
-	
+
+	isConvertingAsm.value = true;
 	try {
-		const response = await window.Turing.encrypt({ message: encryptMessage.value });
-		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
-		encryptResult.value = formattedResponse;
+		const scriptHex = tbc.Script.fromASM(asmInput.value.trim()).toHex();
+		hexResult.value = scriptHex;
+		toastApi.showSuccess('Converted ASM to HEX successfully', 3000);
 	} catch (error) {
-		console.error('Encrypt error:', error);
-		toastApi.showError('Failed to encrypt message', 3000);
-		encryptResult.value = '';
+		console.error('ASM to HEX error:', error);
+		toastApi.showError('Failed to convert ASM to HEX. Please verify the script.', 3000);
+		hexResult.value = '';
 	} finally {
-		isEncrypting.value = false;
-	}
-};
-// 解密消息
-const handleDecryptMessage = async () => {
-	if (!decryptMessage.value) {
-		toastApi.showError('Please enter a message to decrypt', 3000);
-		return;
-	}
-	
-	isDecrypting.value = true;
-	
-	try {
-		console.log('Decrypt message:', decryptMessage.value);
-		const response = await window.Turing.decrypt({ message: decryptMessage.value });
-		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
-		decryptResult.value = formattedResponse;
-	} catch (error) {
-		console.error('Decrypt error:', error);
-		toastApi.showError('Failed to decrypt message', 3000);
-		decryptResult.value = '';
-	} finally {
-		isDecrypting.value = false;
+		isConvertingAsm.value = false;
 	}
 };
 
-// 检查钱包连接状态
+const handleHexToAsm = async () => {
+	if (!hexInput.value || !hexInput.value.trim()) {
+		toastApi.showError('Please enter a HEX script to convert', 3000);
+		return;
+	}
+
+	isConvertingHex.value = true;
+	try {
+		const sanitizedHex = hexInput.value.replace(/\s+/g, '').toLowerCase();
+		const scriptAsm = tbc.Script.fromString(sanitizedHex).toASM();
+		asmResult.value = scriptAsm;
+		toastApi.showSuccess('Converted HEX to ASM successfully', 3000);
+	} catch (error) {
+		console.error('HEX to ASM error:', error);
+		toastApi.showError('Failed to convert HEX to ASM. Please verify the script.', 3000);
+		asmResult.value = '';
+	} finally {
+		isConvertingHex.value = false;
+	}
+};
+
+// 检查钱包连接状态（保持与其他页面一致）
 onMounted(async () => {
 	await getWalletInfo();
 });
@@ -256,10 +233,14 @@ onMounted(async () => {
 
 <style scoped>
 @import '../../assets/form-page.css';
+
 .decrypt-form {
 	margin-top: 0;
 }
+
 .msg-result {
 	margin-top: 0;
 }
 </style>
+
+

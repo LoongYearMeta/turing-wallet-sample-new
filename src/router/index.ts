@@ -35,12 +35,32 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/crypt',
-    name: 'Crypt',
-    component: () => import('../views/crypt/crypt.vue'),
+    path: '/exchange',
+    name: 'ExchangeDemo',
+    redirect: '/exchange/crypt',
     meta: {
-      title: 'Encrypt/Decrypt Demo'
+      title: 'Exchange Demo'
     }
+  },
+  {
+    path: '/exchange/crypt',
+    name: 'ExchangeEncryptDecrypt',
+    component: () => import('../views/exchange/crypt.vue'),
+    meta: {
+      title: 'Encrypt/Decrypt'
+    }
+  },
+  {
+    path: '/exchange/asm-hex',
+    name: 'ExchangeAsmHex',
+    component: () => import('../views/exchange/asm-hex.vue'),
+    meta: {
+      title: 'ASM <-> HEX'
+    }
+  },
+  {
+    path: '/crypt',
+    redirect: '/exchange/crypt'
   },
   {
     path: '/decode-txraws',

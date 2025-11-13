@@ -12,7 +12,14 @@ export const appMenu: MenuItem[] = [
       { path: '/signing-demo/sign-transaction', label: 'Sign Transaction' },
     ],
   },
-  { path: '/crypt', label: 'Encrypt/Decrypt Demo' },
+  {
+    path: '/exchange',
+    label: 'Exchange Demo',
+    children: [
+      { path: '/exchange/crypt', label: 'Encrypt/Decrypt' },
+      { path: '/exchange/asm-hex', label: 'ASM <-> HEX' },
+    ],
+  },
   { path: '/decode-txraws', label: 'Decode Txraws' },
   { path: '/keys-to-address', label: 'Random Key Generator' },
   { path: '/tbc', label: 'TBC' },
