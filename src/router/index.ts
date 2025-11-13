@@ -61,7 +61,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tbc',
     name: 'TBC',
-    component: () => import('../views/TBC.vue'),
+    component: () => import('../views/TBC/TBC_P2PKH.vue'),
     meta: {
       title: 'TBC'
     }
