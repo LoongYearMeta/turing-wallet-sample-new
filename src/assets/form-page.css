@@ -64,8 +64,8 @@
 
 .form-item textarea {
 	padding: var(--spacing-xs);
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--form-border-color);
+	/* border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color); */
 }
 
 /* 自定义下拉样式 */

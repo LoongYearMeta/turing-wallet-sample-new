@@ -37,7 +37,7 @@
 					@click="handleDelete"
 					type="button"
 					class="m-textarea-btn m-textarea-del"
-					:disabled="disabled"
+					:disabled="!value || disabled"
 					aria-label="Clear content"
 				>
 					Delete
