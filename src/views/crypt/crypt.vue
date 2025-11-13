@@ -49,9 +49,10 @@
 						class="form-button-submit"
 						@click.stop="handleEncryptMessage"
 						type="button"
-						:disabled="!encryptMessage"
+						:disabled="!encryptMessage || isEncrypting"
 					>
-						Encrypt Message
+						<span v-if="isEncrypting">Encrypting...</span>
+						<span v-else>Encrypt Message</span>
 					</button>
 				</div>
 				<!-- encrypt result -->
@@ -136,9 +137,10 @@
 						class="form-button-submit"
 						@click.stop="handleDecryptMessage"
 						type="button"
-						:disabled="!decryptMessage"
+						:disabled="!decryptMessage || isDecrypting"
 					>
-						Decrypt Message
+						<span v-if="isDecrypting">Decrypting...</span>
+						<span v-else>Decrypt Message</span>
 					</button>
 				</div>
 				<!-- dncrypt result -->
@@ -190,6 +192,10 @@ const { getWalletInfo } = walletStore;
 // 消息提示
 const toastApi = useToast();
 
+// 提交状态
+const isEncrypting = ref(false);
+const isDecrypting = ref(false);
+
 // 表单输入数据
 const encryptMessage = ref('');
 const decryptMessage = ref('');
@@ -204,6 +210,9 @@ const handleEncryptMessage = async () => {
 		toastApi.showError('Please enter a message to encrypt', 3000);
 		return;
 	}
+	
+	isEncrypting.value = true;
+	
 	try {
 		const response = await window.Turing.encrypt({ message: encryptMessage.value });
 		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
@@ -212,6 +221,8 @@ const handleEncryptMessage = async () => {
 		console.error('Encrypt error:', error);
 		toastApi.showError('Failed to encrypt message', 3000);
 		encryptResult.value = '';
+	} finally {
+		isEncrypting.value = false;
 	}
 };
 // 解密消息
@@ -220,6 +231,9 @@ const handleDecryptMessage = async () => {
 		toastApi.showError('Please enter a message to decrypt', 3000);
 		return;
 	}
+	
+	isDecrypting.value = true;
+	
 	try {
 		console.log('Decrypt message:', decryptMessage.value);
 		const response = await window.Turing.decrypt({ message: decryptMessage.value });
@@ -229,6 +243,8 @@ const handleDecryptMessage = async () => {
 		console.error('Decrypt error:', error);
 		toastApi.showError('Failed to decrypt message', 3000);
 		decryptResult.value = '';
+	} finally {
+		isDecrypting.value = false;
 	}
 };
 

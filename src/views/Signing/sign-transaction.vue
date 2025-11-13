@@ -159,31 +159,25 @@
 			</div>
 			
 			<!-- 分层展示签名结果 -->
-			<div v-if="parsedSignatures && parsedSignatures.length > 0" class="signatures-container">
+			<div v-if="parsedSignatures && parsedSignatures.length > 0" class="form-container">
 				<div 
+					class="form-item-cards" 
 					v-for="(sigGroup, groupIndex) in parsedSignatures" 
 					:key="`group-${groupIndex}`"
-					class="signature-group"
 				>
-					<div class="signature-group-header">
-						<span class="signature-group-title">Signature Group {{ groupIndex + 1 }}</span>
-						<span class="signature-group-count">({{ sigGroup.length }} signature{{ sigGroup.length > 1 ? 's' : '' }})</span>
-					</div>
+					<span class="form-item-card-title">txraws {{ groupIndex + 1 }}</span>
 					<div 
 						v-for="(signature, sigIndex) in sigGroup" 
 						:key="`sig-${groupIndex}-${sigIndex}`"
-						class="signature-item"
+						class="utxo-input-group"
 					>
-						<div class="signature-item-header">
-							<span class="signature-item-label">Signature {{ sigIndex + 1 }}</span>
-							<span class="signature-item-length">{{ signature.length }} chars</span>
-						</div>
+						<label class="utxo-label">Signature {{ sigIndex + 1 }}</label>
 						<MyTextarea
 							:model-value="signature"
 							:readonly="true"
 							:copyable="true"
 							:deletable="false"
-							class="signature-textarea"
+							class="utxo-textarea"
 						/>
 					</div>
 				</div>
@@ -763,91 +757,6 @@ onMounted(async () => {
 	animation: fadeIn 0.3s ease;
 }
 
-/* 签名容器样式 */
-.signatures-container {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-md);
-	margin-bottom: var(--spacing-md);
-}
-
-/* 签名组样式 */
-.signature-group {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-sm);
-	padding: var(--spacing-sm);
-	background-color: var(--form-item-bg-color);
-	border: 1px solid var(--form-border-color);
-	border-radius: var(--radius-sm);
-	transition: all 0.2s ease;
-}
-
-.signature-group:hover {
-	border-color: var(--color-primary);
-	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
-}
-
-.signature-group-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding-bottom: var(--spacing-xs);
-	border-bottom: 1px solid var(--form-border-color);
-}
-
-.signature-group-title {
-	font-size: var(--font-size-body);
-	font-weight: 600;
-	color: var(--color-text-primary);
-}
-
-.signature-group-count {
-	font-size: var(--font-size-small);
-	color: var(--color-text-secondary);
-}
-
-/* 签名项样式 */
-.signature-item {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-xs);
-	padding: var(--spacing-xs);
-	background-color: var(--form-bg-color);
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--form-border-color);
-}
-
-.signature-item-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.signature-item-label {
-	font-size: var(--font-size-small);
-	font-weight: 500;
-	color: var(--color-text-secondary);
-}
-
-.signature-item-length {
-	font-size: var(--font-size-tiny);
-	color: var(--color-text-tertiary);
-	background-color: var(--form-item-bg-color);
-	padding: 2px 6px;
-	border-radius: 4px;
-}
-
-.signature-textarea {
-	width: 100%;
-}
-
-.signature-textarea :deep(.m-textarea) {
-	min-height: 60px;
-	font-family: 'Courier New', Courier, monospace;
-	font-size: var(--font-size-small);
-	word-break: break-all;
-}
 
 /* 原始JSON区域样式 */
 .raw-json-section {
@@ -993,23 +902,6 @@ onMounted(async () => {
 	.result-textarea :deep(.m-textarea) {
 		min-height: 100px;
 		font-size: var(--font-size-small);
-	}
-
-	.signatures-container {
-		gap: var(--spacing-sm);
-	}
-
-	.signature-group {
-		padding: var(--spacing-xs);
-	}
-
-	.signature-item {
-		padding: 8px;
-	}
-
-	.signature-textarea :deep(.m-textarea) {
-		min-height: 50px;
-		font-size: var(--font-size-tiny);
 	}
 }
 </style>

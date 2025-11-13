@@ -13,31 +13,36 @@
 			@focus="$emit('focus')"
 			class="form-item-textarea m-textarea"
 		></textarea>
-		<!-- flex 布局 -->
-		<div class="m-textarea-actions">
-			<!-- copy -->
-			<button
-				v-if="copyable"
-				@click="handleCopy"
-				type="button"
-				class="m-textarea-btn m-textarea-copy"
-				:disabled="!value || disabled"
-				aria-label="Copy content"
-			>
-				<span v-if="!isCopied">Copy</span>
-				<span v-if="isCopied">Copied</span>
-			</button>
-			<!-- delete -->
-			<button
-				v-if="deletable"
-				@click="handleDelete"
-				type="button"
-				class="m-textarea-btn m-textarea-del"
-				:disabled="disabled"
-				aria-label="Clear content"
-			>
-				Delete
-			</button>
+		<!-- 操作按钮区域（仅在需要时显示） -->
+		<div v-if="copyable || deletable" class="m-textarea-actions-wrapper">
+			<!-- 分割线 -->
+			<div class="m-textarea-divider"></div>
+			<!-- flex 布局 -->
+			<div class="m-textarea-actions">
+				<!-- copy -->
+				<button
+					v-if="copyable"
+					@click="handleCopy"
+					type="button"
+					class="m-textarea-btn m-textarea-copy"
+					:disabled="!value || disabled"
+					aria-label="Copy content"
+				>
+					<span v-if="!isCopied">Copy</span>
+					<span v-if="isCopied">Copied</span>
+				</button>
+				<!-- delete -->
+				<button
+					v-if="deletable"
+					@click="handleDelete"
+					type="button"
+					class="m-textarea-btn m-textarea-del"
+					:disabled="disabled"
+					aria-label="Clear content"
+				>
+					Delete
+				</button>
+			</div>
 		</div>
 	</div>
 </template>
@@ -214,21 +219,44 @@ onUnmounted(() => {
 
 <style scoped>
 @import '@/assets/form-page.css';
-/* 容器样式：相对定位（用于按钮绝对定位） */
+/* 容器样式：flex布局，垂直排列 */
 .m-textarea-container {
 	position: relative;
 	width: 100%;
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-sm);
+	background-color: var(--form-item-bg-color);
+	overflow: hidden;
 }
 
+/* 操作按钮包装器 */
+.m-textarea-actions-wrapper {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	background-color: var(--form-item-bg-color);
+}
+
+/* 分割线样式 */
+.m-textarea-divider {
+	width: 100%;
+	height: 1px;
+	background-color: var(--form-border-color);
+	margin: 0;
+}
+
+/* 操作按钮容器 */
 .m-textarea-actions {
 	display: flex;
 	justify-content: flex-end;
+	align-items: center;
 	gap: var(--spacing-xs);
-	position: absolute;
-	bottom: var(--spacing-xs);
-	right: var(--spacing-xs);
-	z-index: 1;
+	padding: var(--spacing-sm) var(--spacing-xs);
+	width: 100%;
+	box-sizing: border-box;
 }
 
 /* 文本域样式：基础样式+过渡效果 */
@@ -236,23 +264,28 @@ onUnmounted(() => {
 	width: 100%;
 	min-height: 60px;
 	padding: var(--spacing-xs);
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--form-border-color);
+	padding-bottom: var(--spacing-xs);
+	border: none;
+	border-radius: 0;
 	resize: none; /* 禁用手动调整大小 */
 	font-size: var(--font-size-subtitle);
 	line-height: 1.5;
 	color: var(--color-text-primary);
-	background-color: var(--form-item-bg-color);
+	background-color: transparent;
 	transition: all 0.2s ease;
 	box-sizing: border-box;
 	overflow-y: hidden; /* 默认隐藏滚动条 */
 }
 
-/* 文本域聚焦样式：强化视觉反馈 */
-.m-textarea:focus {
-	outline: none;
+/* 容器聚焦样式：强化视觉反馈 */
+.m-textarea-container:focus-within {
 	border-color: var(--color-primary);
 	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+}
+
+/* 文本域聚焦样式 */
+.m-textarea:focus {
+	outline: none;
 }
 
 /* 只读/禁用样式：区分状态 */
@@ -339,35 +372,43 @@ onUnmounted(() => {
 /* 响应式优化 */
 @media (max-width: 768px) {
 	.m-textarea-actions {
-		bottom: var(--spacing-xs);
-		right: var(--spacing-xs);
-		gap: 8px;
+		padding: var(--spacing-xs);
+		gap: var(--spacing-xs);
 	}
 	
 	.m-textarea-btn {
-		padding: 5px 10px;
-		font-size: var(--font-size-tiny);
+		padding: 6px 12px;
+		font-size: var(--font-size-small);
 	}
 	
 	.m-textarea {
 		font-size: var(--font-size-small);
 		min-height: 50px;
+		padding: var(--spacing-xs);
 	}
 }
 
 @media (max-width: 480px) {
 	.m-textarea-actions {
-		flex-direction: column;
-		gap: 6px;
-		right: var(--spacing-xs);
-		bottom: var(--spacing-xs);
+		padding: var(--spacing-xs);
+		gap: var(--spacing-xs);
+		/* 保持横向排列 */
+		flex-direction: row;
+		justify-content: flex-end;
 	}
 	
 	.m-textarea-btn {
-		padding: 4px 8px;
+		padding: 6px 10px;
 		font-size: var(--font-size-tiny);
-		width: 100%;
-		min-width: 60px;
+		/* 不设置width: 100%，保持按钮自然宽度 */
+		min-width: auto;
+		flex-shrink: 0;
+	}
+	
+	.m-textarea {
+		font-size: var(--font-size-small);
+		min-height: 50px;
+		padding: var(--spacing-xs);
 	}
 }
 </style>

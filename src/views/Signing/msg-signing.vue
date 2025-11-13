@@ -108,9 +108,10 @@
 					class="form-button-submit"
 					@click.stop="handleSignMessage"
 					type="button"
-					:disabled="!signMessage.trim()"
+					:disabled="!signMessage.trim() || isSubmitting"
 				>
-					Sign Message
+					<span v-if="isSubmitting">Signing...</span>
+					<span v-else>Sign Message</span>
 				</button>
 			</div>
 		</form>
@@ -162,6 +163,9 @@ const { getWalletInfo } = walletStore;
 // 消息提示
 const toastApi = useToast();
 
+// 提交状态
+const isSubmitting = ref(false);
+
 // 编码类型选项
 const options = [
 	{ label: 'UTF-8', value: 'utf-8' },
@@ -194,6 +198,9 @@ const handleSignMessage = async () => {
 		toastApi.showError('Please enter a message to sign', 3000);
 		return;
 	}
+	
+	isSubmitting.value = true;
+	
 	try {
 		const response = await window.Turing.signMessage({
 			message: signMessage.value,
@@ -206,6 +213,8 @@ const handleSignMessage = async () => {
 		console.error('Sign message error:', error);
 		toastApi.showError('Failed to sign message', 3000);
 		signedMessage.value = '';
+	} finally {
+		isSubmitting.value = false;
 	}
 };
 

@@ -49,9 +49,10 @@
 					class="form-button-submit"
 					@click.stop="handleDecodeTxraws"
 					type="button"
-					:disabled="!txraw"
+					:disabled="!txraw || isSubmitting"
 				>
-					Decode Txraw
+					<span v-if="isSubmitting">Decoding...</span>
+					<span v-else>Decode Txraw</span>
 				</button>
 			</div>
 		</form>
@@ -104,6 +105,9 @@ const { getWalletInfo } = walletStore;
 // 消息提示
 const toastApi = useToast();
 
+// 提交状态
+const isSubmitting = ref(false);
+
 // 状态管理
 const txraw = ref('');
 const decodedTxraw = ref('');
@@ -115,6 +119,9 @@ const handleDecodeTxraws = async () => {
 		toastApi.showError('Please enter a txraw to decode', 3000);
 		return;
 	}
+	
+	isSubmitting.value = true;
+	
 	try {
 		const transaction = new tbc.Transaction(txraw.value);
 		const response = transaction.toObject();
@@ -124,6 +131,8 @@ const handleDecodeTxraws = async () => {
 		console.error('Decode txraw error:', error);
 		toastApi.showError('Failed to decode txraw', 3000);
 		decodedTxraw.value = '';
+	} finally {
+		isSubmitting.value = false;
 	}
 };
 
