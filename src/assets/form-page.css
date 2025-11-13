@@ -108,6 +108,7 @@
 	width: 100%;
 	background-color: var(--form-item-bg-color);
 	border-radius: var(--radius-sm);
+	z-index: 1;
 }
 
 .select-dropdown .dropdown-option {

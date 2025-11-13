@@ -53,7 +53,6 @@
 						<span v-else>Convert</span>
 					</button>
 				</div>
-
 				<div class="msg-form-header">
 					<div class="msg-form-title">
 						<svg
