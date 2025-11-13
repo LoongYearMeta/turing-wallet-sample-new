@@ -86,9 +86,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { getTransactionHistory, clearTransactionHistory, type TransactionHistoryItem } from '../utils/transactionHistory';
-import { useToast } from '../utils/useToast';
-import MyTextarea from '../components/m-textarea.vue';
+import { getTransactionHistory, clearTransactionHistory, type TransactionHistoryItem } from '../../utils/transactionHistory';
+import { useToast } from '../../utils/useToast';
+import MyTextarea from '../../components/m-textarea.vue';
 
 const toastApi = useToast();
 
@@ -169,7 +169,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import '../assets/form-page.css';
+@import '../../assets/form-page.css';
 
 .history-records-page {
 	padding: var(--spacing-lg);

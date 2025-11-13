@@ -53,9 +53,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/keys-to-address',
     name: 'KeysToAddress',
-    component: () => import('../views/keys-to-address.vue'),
+    component: () => import('../views/Keys/keys-to-address.vue'),
     meta: {
-      title: 'Keys to Address'
+      title: 'Random Key Generator'
     }
   },
   {
@@ -85,7 +85,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/poolnft',
     name: 'POOLNFT',
-    component: () => import('../views/POOLNFT.vue'),
+    component: () => import('../views/POOLNFT/POOLNFT.vue'),
     meta: {
       title: 'POOLNFT'
     }
@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/wallet-test',
     name: 'WalletTest',
-    component: () => import('../views/wallet-test.vue'),
+    component: () => import('../views/Wallet/wallet-test.vue'),
     meta: {
       title: 'Turing Wallet Test'
     }
@@ -101,7 +101,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/records',
     name: 'HistoryRecords',
-    component: () => import('../views/history-records.vue'),
+    component: () => import('../views/history/history-records.vue'),
     meta: {
       title: 'History Records'
     }

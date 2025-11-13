@@ -14,7 +14,7 @@ export const appMenu: MenuItem[] = [
   },
   { path: '/crypt', label: 'Encrypt/Decrypt Demo' },
   { path: '/decode-txraws', label: 'Decode Txraws' },
-  { path: '/keys-to-address', label: 'Keys to Address' },
+  { path: '/keys-to-address', label: 'Random Key Generator' },
   { path: '/tbc', label: 'TBC' },
   { path: '/ft', label: 'FT' },
   { path: '/nft', label: 'NFT' },
