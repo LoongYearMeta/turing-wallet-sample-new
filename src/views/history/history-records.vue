@@ -85,12 +85,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { getTransactionHistory, clearTransactionHistory, type TransactionHistoryItem } from '../../utils/transactionHistory';
 import { useToast } from '../../utils/useToast';
+import { useWalletStore } from '../../stores/wallet';
+import { storeToRefs } from 'pinia';
 import MyTextarea from '../../components/m-textarea.vue';
 
 const toastApi = useToast();
+
+// 钱包状态管理
+const walletStore = useWalletStore();
+const { walletInfo, isConnected } = storeToRefs(walletStore);
 
 // 历史记录列表
 const historyList = ref<TransactionHistoryItem[]>([]);
@@ -98,9 +104,15 @@ const historyList = ref<TransactionHistoryItem[]>([]);
 // 展开的项目索引集合
 const expandedItems = ref<Set<number>>(new Set());
 
-// 加载历史记录
+// 加载历史记录（根据当前钱包地址）
 const loadHistory = () => {
-	historyList.value = getTransactionHistory();
+	if (isConnected.value && walletInfo.value.curAddress) {
+		historyList.value = getTransactionHistory(walletInfo.value.curAddress);
+	} else {
+		historyList.value = [];
+	}
+	// 清空展开状态
+	expandedItems.value.clear();
 };
 
 // 切换展开/收起
@@ -114,8 +126,13 @@ const toggleExpand = (index: number) => {
 
 // 清除历史记录
 const handleClearHistory = () => {
-	if (confirm('Are you sure you want to clear all transaction history?')) {
-		clearTransactionHistory();
+	if (!isConnected.value || !walletInfo.value.curAddress) {
+		toastApi.showError('Please connect your wallet first', 3000);
+		return;
+	}
+	
+	if (confirm('Are you sure you want to clear all transaction history for this wallet?')) {
+		clearTransactionHistory(walletInfo.value.curAddress);
 		historyList.value = [];
 		expandedItems.value.clear();
 		toastApi.showSuccess('History cleared successfully', 3000);
@@ -161,11 +178,40 @@ onMounted(() => {
 	
 	// 监听 storage 变化（用于跨标签页同步）
 	window.addEventListener('storage', (e) => {
-		if (e.key === 'transaction_history') {
-			loadHistory();
+		if (e.key && e.key.startsWith('transaction_history_')) {
+			// 检查是否是当前地址的历史记录
+			if (isConnected.value && walletInfo.value.curAddress) {
+				const storageKey = `transaction_history_${walletInfo.value.curAddress}`;
+				if (e.key === storageKey) {
+					loadHistory();
+				}
+			}
 		}
 	});
 });
+
+// 监听钱包地址变化，自动切换历史记录
+watch(
+	() => walletInfo.value.curAddress,
+	(newAddress, oldAddress) => {
+		if (newAddress !== oldAddress) {
+			loadHistory();
+		}
+	}
+);
+
+// 监听连接状态变化
+watch(
+	() => isConnected.value,
+	(newConnected) => {
+		if (newConnected) {
+			loadHistory();
+		} else {
+			historyList.value = [];
+			expandedItems.value.clear();
+		}
+	}
+);
 </script>
 
 <style scoped>

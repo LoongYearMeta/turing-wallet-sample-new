@@ -285,11 +285,13 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
+import { storeToRefs } from 'pinia';
 import MyTextarea from '../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../utils/transactionHistory';
 
 // 钱包状态管理
 const walletStore = useWalletStore();
+const { walletInfo } = storeToRefs(walletStore);
 const { getWalletInfo } = walletStore;
 
 // 消息提示
@@ -526,8 +528,8 @@ const handleMint = async () => {
 		const txid = extractTxid(response);
 		
 		// 记录历史
-		if (txid) {
-			addTransactionHistory('FT_MINT', txid, response, params);
+		if (txid && walletInfo.value.curAddress) {
+			addTransactionHistory('FT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
 		
 		// 格式化返回结果并显示
@@ -583,8 +585,8 @@ const handleTransfer = async () => {
 		const txid = extractTxid(response);
 		
 		// 记录历史
-		if (txid) {
-			addTransactionHistory('FT_TRANSFER', txid, response, params);
+		if (txid && walletInfo.value.curAddress) {
+			addTransactionHistory('FT_TRANSFER', txid, response, params, walletInfo.value.curAddress);
 		}
 		
 		// 格式化返回结果并显示

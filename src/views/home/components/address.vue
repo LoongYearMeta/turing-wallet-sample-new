@@ -29,7 +29,7 @@
         </svg>
       </div>
       <div class="wallet-info">
-        <div class="wallet-address" v-if="isConnected && walletInfo.address">
+        <div class="wallet-address" v-if="isConnected && walletInfo.curAddress">
           {{ displayAddress }}
         </div>
         <div class="wallet-address" v-else>
@@ -64,13 +64,13 @@ const formatAddress = (address: string) => {
 
 // 根据屏幕大小决定显示完整地址还是格式化地址
 const displayAddress = computed(() => {
-  if (!isConnected.value || !walletInfo.value.address) return ''
+  if (!isConnected.value || !walletInfo.value.curAddress) return ''
   // 移动端或小窗口时使用格式化地址
   if (isMobile.value) {
-    return formatAddress(walletInfo.value.address)
+    return formatAddress(walletInfo.value.curAddress)
   }
   // 桌面端显示完整地址
-  return walletInfo.value.address
+  return walletInfo.value.curAddress
 })
 
 // 检测是否为移动端

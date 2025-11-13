@@ -16,8 +16,20 @@ export interface TransactionHistoryItem {
 	timestamp: number;
 }
 
-const HISTORY_STORAGE_KEY = 'transaction_history';
+const HISTORY_STORAGE_KEY_PREFIX = 'transaction_history_';
 const MAX_HISTORY_COUNT = 100;
+
+/**
+ * 根据钱包地址生成存储键
+ * @param address 钱包地址
+ * @returns 存储键
+ */
+function getStorageKey(address: string): string {
+	if (!address) {
+		throw new Error('Wallet address is required');
+	}
+	return `${HISTORY_STORAGE_KEY_PREFIX}${address}`;
+}
 
 /**
  * 添加交易历史记录
@@ -25,16 +37,23 @@ const MAX_HISTORY_COUNT = 100;
  * @param txid 交易ID
  * @param response 完整的响应体
  * @param requestParams 请求参数
+ * @param address 钱包地址（用于区分不同地址的历史记录）
  */
 export function addTransactionHistory(
 	method: string,
 	txid: string,
 	response: any,
-	requestParams: any
+	requestParams: any,
+	address: string
 ): void {
 	try {
+		if (!address) {
+			console.error('Cannot save transaction history: wallet address is required');
+			return;
+		}
+		
 		// 获取现有历史记录
-		const existingHistory = getTransactionHistory();
+		const existingHistory = getTransactionHistory(address);
 		
 		// 创建新记录
 		const newRecord: TransactionHistoryItem = {
@@ -51,20 +70,27 @@ export function addTransactionHistory(
 		// 限制为最近100条
 		const limitedHistory = updatedHistory.slice(0, MAX_HISTORY_COUNT);
 		
-		// 保存到 localStorage
-		localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(limitedHistory));
+		// 保存到 localStorage（按地址区分）
+		const storageKey = getStorageKey(address);
+		localStorage.setItem(storageKey, JSON.stringify(limitedHistory));
 	} catch (error) {
 		console.error('Failed to save transaction history:', error);
 	}
 }
 
 /**
- * 获取所有交易历史记录
+ * 获取指定钱包地址的交易历史记录
+ * @param address 钱包地址
  * @returns 历史记录数组，按时间倒序（最新的在前）
  */
-export function getTransactionHistory(): TransactionHistoryItem[] {
+export function getTransactionHistory(address: string): TransactionHistoryItem[] {
 	try {
-		const historyStr = localStorage.getItem(HISTORY_STORAGE_KEY);
+		if (!address) {
+			return [];
+		}
+		
+		const storageKey = getStorageKey(address);
+		const historyStr = localStorage.getItem(storageKey);
 		if (!historyStr) {
 			return [];
 		}
@@ -79,11 +105,17 @@ export function getTransactionHistory(): TransactionHistoryItem[] {
 }
 
 /**
- * 清除所有交易历史记录
+ * 清除指定钱包地址的交易历史记录
+ * @param address 钱包地址
  */
-export function clearTransactionHistory(): void {
+export function clearTransactionHistory(address: string): void {
 	try {
-		localStorage.removeItem(HISTORY_STORAGE_KEY);
+		if (!address) {
+			return;
+		}
+		
+		const storageKey = getStorageKey(address);
+		localStorage.removeItem(storageKey);
 	} catch (error) {
 		console.error('Failed to clear transaction history:', error);
 	}

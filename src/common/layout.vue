@@ -34,10 +34,15 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 import Drawer from './components/Drawer.vue'
+import { useWalletStore } from '../stores/wallet'
 
 const sidebarCollapsed = ref(false)
 const drawerVisible = ref(false)
 const isMobile = ref(false)
+
+// 钱包状态管理
+const walletStore = useWalletStore()
+const { checkAccountChange } = walletStore
 
 // 菜单数据（从Sidebar组件复制，实际项目中应该从store或props获取）
 const menuItems = [
@@ -125,6 +130,10 @@ const checkMobile = () => {
 let mediaQuery: MediaQueryList | null = null
 let handleMediaChange: ((e: MediaQueryListEvent) => void) | null = null
 
+// 钱包地址变化监听（定时轮询）
+let walletCheckInterval: number | null = null
+const WALLET_CHECK_INTERVAL = 8000 // 每8秒检查一次钱包地址变化（对用户无感）
+
 onMounted(() => {
   // 初始检测
   checkMobile()
@@ -147,6 +156,31 @@ onMounted(() => {
   
   // 同时监听 resize 事件作为备用
   window.addEventListener('resize', checkMobile)
+  
+  // 设置钱包地址变化监听（定时轮询）
+  // 检查钱包插件是否可用，如果不可用则延迟检查
+  let walletCheckRetryCount = 0
+  const MAX_WALLET_CHECK_RETRIES = 10 // 最多重试10次（10秒）
+  
+  const initWalletCheck = () => {
+    if (typeof window !== 'undefined' && window.Turing) {
+      // 立即检查一次
+      checkAccountChange()
+      
+      // 设置定时器定期检查
+      walletCheckInterval = window.setInterval(() => {
+        checkAccountChange()
+      }, WALLET_CHECK_INTERVAL)
+    } else if (walletCheckRetryCount < MAX_WALLET_CHECK_RETRIES) {
+      // 如果钱包插件还未加载，延迟重试（最多10次）
+      walletCheckRetryCount++
+      setTimeout(initWalletCheck, 1000)
+    }
+    // 如果超过最大重试次数，停止尝试（钱包插件可能未安装）
+  }
+  
+  // 初始化钱包检查
+  initWalletCheck()
 })
 
 onUnmounted(() => {
@@ -158,6 +192,12 @@ onUnmounted(() => {
     }
   }
   window.removeEventListener('resize', checkMobile)
+  
+  // 清除钱包地址变化监听定时器
+  if (walletCheckInterval !== null) {
+    clearInterval(walletCheckInterval)
+    walletCheckInterval = null
+  }
 })
 </script>
 

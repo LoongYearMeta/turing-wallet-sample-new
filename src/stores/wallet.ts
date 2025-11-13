@@ -14,28 +14,22 @@ import { getLocalStorage, setLocalStorage, removeLocalStorage } from '../utils/s
  * 账号变更检查
  */
 export const useWalletStore = defineStore('wallet', () => {
-	// 响应式状态
+	// 状态
 	const walletInfo = reactive({
-		address: '', // 钱包地址
+		curAddress: '', // 钱包地址
 		tbcBalance: null as number | null, // 钱包余额
-		blockHeight: null as number | null, // 当前区块高度
+		curBlockHeight: null as number | null, // 当前区块高度
 	});
-
-	// 连接中状态
-	const isConnecting = ref(false)
 
 	// 加载状态
 	const isLoadingBalance = ref(false);
 	const isLoadingHeight = ref(false);
-
-	// 钱包连接状态
 	const isConnected = ref(false);
-
-	// 检查频率控制
-	let lastCheckTime = 0; // 上次检查时间戳
+	
+	// 用于控制检查频率的时间戳
+	let lastCheckTime = 0;
 	const CHECK_INTERVAL = 5000; // 最小检查间隔：5秒（避免过度频繁的调用）
 
-	// 检查钱包是否就绪（是否已注入Turing对象）
 	const isReady = computed(() => {
 		return typeof window !== 'undefined' && !!window.Turing;
 	});
@@ -49,9 +43,7 @@ export const useWalletStore = defineStore('wallet', () => {
 			alert('请先安装Turing Wallet!');
 			return false;
 		}
-		if (isConnecting.value) return false; // 避免重复连接
 		try {
-			isConnecting.value = true;
 			// 先尝试连接钱包（会弹出授权窗口）
 			await window.Turing.connect();
 			const { tbcAddress } = await window.Turing.getAddress();
@@ -60,7 +52,7 @@ export const useWalletStore = defineStore('wallet', () => {
 			if (!tbcAddress) {
 				alert('请先创建钱包账户!');
 				isConnected.value = false;
-				walletInfo.address = '';
+				walletInfo.curAddress = '';
 				removeLocalStorage('tbcAddress');
 				return false;
 			}
@@ -69,10 +61,10 @@ export const useWalletStore = defineStore('wallet', () => {
 			isLoadingBalance.value = true;
 			isLoadingHeight.value = true;
 			walletInfo.tbcBalance = null;
-			walletInfo.blockHeight = null;
+			walletInfo.curBlockHeight = null;
 
 			// 立即显示地址
-			walletInfo.address = tbcAddress;
+			walletInfo.curAddress = tbcAddress;
 			isConnected.value = true;
 
 			// 保存地址到 localStorage（7天过期）
@@ -86,19 +78,17 @@ export const useWalletStore = defineStore('wallet', () => {
 		} catch (error) {
 			console.error('获取钱包地址失败:', error);
 			isConnected.value = false;
-			walletInfo.address = '';
+			walletInfo.curAddress = '';
 			removeLocalStorage('tbcAddress');
 			alert('连接钱包失败!');
 			return false;
-		} finally {
-			isConnecting.value = false;
 		}
 	};
 
 	// 获取钱包余额
 	const getBalance = async () => {
 		try {
-			const tbc = await API.getTBCbalance(walletInfo.address, network);
+			const tbc = await API.getTBCbalance(walletInfo.curAddress, network);
 			walletInfo.tbcBalance = tbc / 1000000;
 		} catch (error) {
 			console.error('获取钱包余额失败:', error);
@@ -112,10 +102,10 @@ export const useWalletStore = defineStore('wallet', () => {
 	const getBlockHeight = async () => {
 		try {
 			const res = await API.fetchBlockHeaders(network);
-			walletInfo.blockHeight = res[0]?.height || 0;
+			walletInfo.curBlockHeight = res[0]?.height || 0;
 		} catch (error) {
 			console.error('获取当前区块高度失败:', error);
-			walletInfo.blockHeight = 0;
+			walletInfo.curBlockHeight = 0;
 		} finally {
 			isLoadingHeight.value = false;
 		}
@@ -131,9 +121,9 @@ export const useWalletStore = defineStore('wallet', () => {
 			console.error('断开钱包连接失败:', error);
 		} finally {
 			// 清除状态
-			walletInfo.address = '';
+			walletInfo.curAddress = '';
 			walletInfo.tbcBalance = 0;
-			walletInfo.blockHeight = 0;
+			walletInfo.curBlockHeight = 0;
 			isConnected.value = false;
 			// 清除 localStorage
 			removeLocalStorage('tbcAddress');
@@ -153,7 +143,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
 		try {
 			const now = Date.now();
-			const currentAddress = walletInfo.address;
+			const currentAddress = walletInfo.curAddress;
 			const cachedAddress = getLocalStorage('tbcAddress');
 			
 			// 如果钱包已连接且有地址，并且距离上次检查时间太短，则跳过本次检查
@@ -170,11 +160,7 @@ export const useWalletStore = defineStore('wallet', () => {
 			}
 			
 			lastCheckTime = now;
-			isConnecting.value = true;
 
-			// 刷新时先尝试建立连接
-			await window.Turing.connect();
-			
 			// 获取地址
 			const { tbcAddress } = await window.Turing.getAddress();
 
@@ -183,8 +169,8 @@ export const useWalletStore = defineStore('wallet', () => {
 				isLoadingBalance.value = true;
 				isLoadingHeight.value = true;
 				walletInfo.tbcBalance = null;
-				walletInfo.blockHeight = null;
-				walletInfo.address = tbcAddress;
+				walletInfo.curBlockHeight = null;
+				walletInfo.curAddress = tbcAddress;
 				isConnected.value = true;
 				
 				getBalance();
@@ -195,8 +181,8 @@ export const useWalletStore = defineStore('wallet', () => {
 				isLoadingBalance.value = true;
 				isLoadingHeight.value = true;
 				walletInfo.tbcBalance = null;
-				walletInfo.blockHeight = null;
-				walletInfo.address = tbcAddress;
+				walletInfo.curBlockHeight = null;
+				walletInfo.curAddress = tbcAddress;
 				isConnected.value = true;
 				
 				setLocalStorage('tbcAddress', tbcAddress, 1000 * 60 * 60 * 24 * 7);
@@ -211,28 +197,25 @@ export const useWalletStore = defineStore('wallet', () => {
 			}
 			else if (!tbcAddress) {
 				isConnected.value = false;
-				walletInfo.address = '';
+				walletInfo.curAddress = '';
 				walletInfo.tbcBalance = null;
-				walletInfo.blockHeight = null;
+				walletInfo.curBlockHeight = null;
 				removeLocalStorage('tbcAddress');
 			}
 			
 			return true;
 		} catch (error: any) {
 			isConnected.value = false;
-			walletInfo.address = '';
+			walletInfo.curAddress = '';
 			walletInfo.tbcBalance = null;
-			walletInfo.blockHeight = null;
+			walletInfo.curBlockHeight = null;
 			removeLocalStorage('tbcAddress');
 			return false;
-		} finally {
-			isConnecting.value = false;
 		}
 	};
 
 	return {
 		walletInfo,
-		isConnecting,
 		isConnected,
 		isReady,
 		isLoadingBalance,

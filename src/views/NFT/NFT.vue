@@ -378,11 +378,13 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
+import { storeToRefs } from 'pinia';
 import MyTextarea from '../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../utils/transactionHistory';
 
 // 钱包状态管理
 const walletStore = useWalletStore();
+const { walletInfo } = storeToRefs(walletStore);
 const { getWalletInfo } = walletStore;
 
 // 消息提示
@@ -759,8 +761,8 @@ const handleCollectionCreate = async () => {
 		const txid = extractTxid(response);
 		
 		// 记录历史
-		if (txid) {
-			addTransactionHistory('COLLECTION_CREATE', txid, response, params);
+		if (txid && walletInfo.value.curAddress) {
+			addTransactionHistory('COLLECTION_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
 		
 		// 格式化返回结果并显示
@@ -819,8 +821,8 @@ const handleNftCreate = async () => {
 		const txid = extractTxid(response);
 		
 		// 记录历史
-		if (txid) {
-			addTransactionHistory('NFT_CREATE', txid, response, params);
+		if (txid && walletInfo.value.curAddress) {
+			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
 		
 		// 格式化返回结果并显示
@@ -870,8 +872,8 @@ const handleNftTransfer = async () => {
 		const txid = extractTxid(response);
 		
 		// 记录历史
-		if (txid) {
-			addTransactionHistory('NFT_TRANSFER', txid, response, params);
+		if (txid && walletInfo.value.curAddress) {
+			addTransactionHistory('NFT_TRANSFER', txid, response, params, walletInfo.value.curAddress);
 		}
 		
 		// 格式化返回结果并显示

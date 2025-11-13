@@ -20,8 +20,6 @@
 			<div class="wallet-address-badge" v-if="isConnected && walletAddress">
 				<span class="wallet-address-text">{{ displayAddress }}</span>
 			</div>
-			<!-- 如果钱包正在连接，显示连接中状态 -->
-			<button class="connect-btn" v-else-if="walletStore.isConnecting" disabled>Connecting...</button>
 			<!-- 如果钱包未连接，显示连接钱包按钮 -->
 			<button v-else @click="handleConnectWallet" class="connect-btn">Connect Wallet</button>
 		</div>
@@ -44,7 +42,7 @@ const emit = defineEmits<{
 }>();
 
 const walletStore = useWalletStore();
-const { walletInfo, isConnected, isConnecting } = storeToRefs(walletStore);
+const { walletInfo, isConnected } = storeToRefs(walletStore);
 const { getWalletInfo } = walletStore;
 
 // 消息提示
@@ -57,11 +55,10 @@ const pageTitle = computed(() => {
 
 // 钱包地址（仅在连接时显示）
 const walletAddress = computed(() => {
-	return isConnected.value ? walletInfo.value.address : '';
+	return isConnected.value ? walletInfo.value.curAddress : '';
 });
 
 const handleConnectWallet = async () => {
-	if (isConnecting.value) return;
 	await walletStore.getAddress();
 	if (isConnected.value) {
 		toastApi.showSuccess('Wallet connected successfully', 3000);
