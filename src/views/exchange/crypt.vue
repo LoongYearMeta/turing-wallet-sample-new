@@ -223,7 +223,6 @@ const handleEncryptMessage = async () => {
 	
 	try {
 		const response = await window.Turing.encrypt({ message: encryptMessage.value });
-		console.log('Encrypt response:', response);
 		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
 		encryptResult.value = formattedResponse;
 		resetEncryptForm();

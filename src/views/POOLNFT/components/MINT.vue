@@ -47,12 +47,7 @@
 		<!-- form body - PoolNFT Version -->
 		<div class="form-item">
 			<label>PoolNFT Version</label>
-			<input
-				v-model="form.poolNFT_version"
-				type="text"
-				class="form-item-input"
-				readonly
-			/>
+			<input v-model="form.poolNFT_version" type="text" class="form-item-input" readonly />
 		</div>
 		<!-- form body - Server Provider Tag -->
 		<div class="form-item">
@@ -84,42 +79,43 @@
 				<span>Enable hash lock (`with_lock`)</span>
 			</label>
 		</div>
+		<template v-if="form.with_lock">
+			<div class="form-item">
+				<label>PubKey Lock List <span v-if="form.with_lock" class="required">*</span></label>
+				<MyTextarea
+					v-model="form.pubKeyLockInput"
+					placeholder="Enter one public key per line"
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
+				<div v-if="errors.pubKeyLock" class="form-item-error">{{ errors.pubKeyLock }}</div>
+			</div>
 
-		<div class="form-item">
-			<label>PubKey Lock List <span v-if="form.with_lock" class="required">*</span></label>
-			<MyTextarea
-				v-model="form.pubKeyLockInput"
-				placeholder="Enter one public key per line"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
-			/>
-			<div v-if="errors.pubKeyLock" class="form-item-error">{{ errors.pubKeyLock }}</div>
-		</div>
+			<div class="form-item">
+				<label>Liquidity Cost Address <span v-if="form.with_lock" class="required">*</span></label>
+				<MyTextarea
+					v-model="form.lpCostAddress"
+					placeholder="Optional address to deduct liquidity cost"
+					:readonly="false"
+					:copyable="true"
+					:deletable="true"
+				/>
+			</div>
 
-		<div class="form-item">
-			<label>Liquidity Cost Address</label>
-			<MyTextarea
-				v-model="form.lpCostAddress"
-				placeholder="Optional address to deduct liquidity cost"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
-			/>
-		</div>
-
-		<div class="form-item">
-			<label>Liquidity Cost Amount (TBC)</label>
-			<input
-				v-model="form.lpCostAmount"
-				type="text"
-				min="0"
-				step="0.00000001"
-				class="form-item-input"
-				placeholder="Default 5"
-			/>
-			<div v-if="errors.lpCostAmount" class="form-item-error">{{ errors.lpCostAmount }}</div>
-		</div>
+			<div class="form-item">
+				<label>Liquidity Cost Amount (TBC) <span v-if="form.with_lock" class="required">*</span></label>
+				<input
+					v-model="form.lpCostAmount"
+					type="text"
+					min="0"
+					step="0.00000001"
+					class="form-item-input"
+					placeholder="Default 5"
+				/>
+				<div v-if="errors.lpCostAmount" class="form-item-error">{{ errors.lpCostAmount }}</div>
+			</div>
+		</template>
 
 		<div class="form-item">
 			<label>Liquidity Plan</label>
@@ -357,11 +353,11 @@ const resetForm = () => {
 const validatePositiveNumber = (value: string | number | null | undefined, allowZero = false) => {
 	// 处理 null、undefined 或空值
 	if (value === null || value === undefined) return false;
-	
+
 	// 转换为字符串并去除空格
 	const strValue = String(value).trim();
 	if (!strValue) return false;
-	
+
 	// 转换为数字并验证
 	const num = Number(strValue);
 	if (Number.isNaN(num)) return false;
@@ -519,7 +515,6 @@ watch(
 		}
 	},
 );
-
 
 watch(
 	() => form.value.serviceFeeRate,
