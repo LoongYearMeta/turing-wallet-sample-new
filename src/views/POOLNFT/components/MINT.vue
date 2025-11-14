@@ -1,5 +1,6 @@
 <template>
 	<form class="msg-form" @submit.prevent="handleSubmit">
+		<!-- form header -->
 		<div class="msg-form-header">
 			<div class="msg-form-title">
 				<svg
@@ -29,7 +30,7 @@
 				Configure POOLNFT MINT parameters and submit the transaction.
 			</p>
 		</div>
-
+		<!-- form body - FT Contract Address -->
 		<div class="form-item">
 			<label>FT Contract Address <span class="required">*</span></label>
 			<MyTextarea
@@ -43,20 +44,17 @@
 				{{ errors.ft_contract_address }}
 			</div>
 		</div>
-
+		<!-- form body - PoolNFT Version -->
 		<div class="form-item">
 			<label>PoolNFT Version</label>
 			<input
 				v-model="form.poolNFT_version"
-				type="number"
-				min="1"
-				step="1"
+				type="text"
 				class="form-item-input"
-				placeholder="Default 2"
+				readonly
 			/>
-			<div v-if="errors.poolNFT_version" class="form-item-error">{{ errors.poolNFT_version }}</div>
 		</div>
-
+		<!-- form body - Server Provider Tag -->
 		<div class="form-item">
 			<label>Server Provider Tag</label>
 			<input
@@ -66,12 +64,12 @@
 				placeholder="Optional"
 			/>
 		</div>
-
+		<!-- form body - Service Fee Rate -->
 		<div class="form-item">
 			<label>Service Fee Rate (%)</label>
 			<input
 				v-model="form.serviceFeeRate"
-				type="number"
+				type="text"
 				min="0"
 				step="0.01"
 				class="form-item-input"
@@ -114,7 +112,7 @@
 			<label>Liquidity Cost Amount (TBC)</label>
 			<input
 				v-model="form.lpCostAmount"
-				type="number"
+				type="text"
 				min="0"
 				step="0.00000001"
 				class="form-item-input"
@@ -125,14 +123,60 @@
 
 		<div class="form-item">
 			<label>Liquidity Plan</label>
-			<input
-				v-model="form.lpPlan"
-				type="number"
-				min="1"
-				step="1"
-				class="form-item-input"
-				placeholder="Default 1"
-			/>
+			<div class="form-item-control">
+				<div class="custom-select" @click.stop="toggleLpPlanDropdown">
+					<div class="select-trigger">
+						<span>{{ currentLpPlanOption.label }}</span>
+					</div>
+					<svg
+						class="select-arrow"
+						:class="{ 'rotate-180': isLpPlanOpen }"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path
+							d="M7 10L12 15L17 10"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					<!-- dropdown -->
+					<transition name="fade">
+						<div class="select-dropdown" v-if="isLpPlanOpen">
+							<div
+								class="dropdown-option"
+								v-for="option in lpPlanOptions"
+								:key="option.value"
+								@click.stop="selectLpPlan(option.value)"
+							>
+								{{ option.label }}
+								<svg
+									v-if="form.lpPlan === option.value"
+									class="check-icon"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+								>
+									<path
+										d="M20 6L9 17L4 12"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</div>
+						</div>
+					</transition>
+				</div>
+			</div>
 			<div v-if="errors.lpPlan" class="form-item-error">{{ errors.lpPlan }}</div>
 		</div>
 
@@ -195,7 +239,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -233,7 +277,7 @@ const isSubmitting = ref(false);
 const form = ref<PoolNftMintForm>({
 	ft_contract_address: '',
 	poolNFT_version: DEFAULT_VERSION,
-	serverProvider_tag: '',
+	serverProvider_tag: '2',
 	serviceFeeRate: DEFAULT_SERVICE_FEE_RATE,
 	with_lock: false,
 	pubKeyLockInput: '',
@@ -246,7 +290,6 @@ const form = ref<PoolNftMintForm>({
 
 const errors = ref({
 	ft_contract_address: '',
-	poolNFT_version: '',
 	serviceFeeRate: '',
 	pubKeyLock: '',
 	lpCostAmount: '',
@@ -255,15 +298,72 @@ const errors = ref({
 
 const sendResult = ref('');
 
+// lpPlan 下拉框选项
+const lpPlanOptions = [
+	{ label: '1', value: '1' },
+	{ label: '2', value: '2' },
+];
+
+// lpPlan 下拉框状态
+const isLpPlanOpen = ref(false);
+
+// 当前选中的 lpPlan 选项
+const currentLpPlanOption = computed(() => {
+	const option = lpPlanOptions.find((item) => item.value === form.value.lpPlan) ?? lpPlanOptions[0];
+	return option ?? { label: '', value: form.value.lpPlan };
+});
+
+// 切换 lpPlan 下拉框
+const toggleLpPlanDropdown = () => {
+	isLpPlanOpen.value = !isLpPlanOpen.value;
+};
+
+// 选择 lpPlan 选项
+const selectLpPlan = (value: string) => {
+	form.value.lpPlan = value;
+	isLpPlanOpen.value = false;
+};
+
 // 表单缓存
 const { handleSubmitSuccess } = useFormCache(form, {
 	key: 'POOLNFT_MINT',
 	clearOnSubmit: true,
 });
 
-const validatePositiveNumber = (value: string, allowZero = false) => {
-	if (!value || !value.trim()) return false;
-	const num = Number(value);
+// 重置表单到初始状态
+const resetForm = () => {
+	form.value = {
+		ft_contract_address: '',
+		poolNFT_version: DEFAULT_VERSION,
+		serverProvider_tag: '',
+		serviceFeeRate: DEFAULT_SERVICE_FEE_RATE,
+		with_lock: false,
+		pubKeyLockInput: '',
+		lpCostAddress: '',
+		lpCostAmount: DEFAULT_LP_COST_AMOUNT,
+		lpPlan: DEFAULT_LP_PLAN,
+		isLockTime: false,
+		domain: '',
+	};
+	// 清空错误信息
+	Object.keys(errors.value).forEach((key) => {
+		errors.value[key as keyof typeof errors.value] = '';
+	});
+	// 清空发送结果
+	sendResult.value = '';
+};
+
+// 验证正数
+const validatePositiveNumber = (value: string | number | null | undefined, allowZero = false) => {
+	// 处理 null、undefined 或空值
+	if (value === null || value === undefined) return false;
+	
+	// 转换为字符串并去除空格
+	const strValue = String(value).trim();
+	if (!strValue) return false;
+	
+	// 转换为数字并验证
+	const num = Number(strValue);
 	if (Number.isNaN(num)) return false;
 	return allowZero ? num >= 0 : num > 0;
 };
@@ -276,17 +376,6 @@ const validateForm = (): boolean => {
 		isValid = false;
 	} else {
 		errors.value.ft_contract_address = '';
-	}
-
-	if (
-		form.value.poolNFT_version !== '' &&
-		(!Number.isInteger(Number(form.value.poolNFT_version)) ||
-			Number(form.value.poolNFT_version) <= 0)
-	) {
-		errors.value.poolNFT_version = 'Version must be a positive integer';
-		isValid = false;
-	} else {
-		errors.value.poolNFT_version = '';
 	}
 
 	if (form.value.serviceFeeRate && !validatePositiveNumber(form.value.serviceFeeRate, true)) {
@@ -311,11 +400,9 @@ const validateForm = (): boolean => {
 		errors.value.lpCostAmount = '';
 	}
 
-	if (!validatePositiveNumber(form.value.lpPlan)) {
-		errors.value.lpPlan = 'Liquidity plan must be a positive integer';
-		isValid = false;
-	} else if (!Number.isInteger(Number(form.value.lpPlan))) {
-		errors.value.lpPlan = 'Liquidity plan must be a positive integer';
+	const lpPlanNum = Number(form.value.lpPlan);
+	if (!Number.isInteger(lpPlanNum) || (lpPlanNum !== 1 && lpPlanNum !== 2)) {
+		errors.value.lpPlan = 'Liquidity plan must be 1 or 2';
 		isValid = false;
 	} else {
 		errors.value.lpPlan = '';
@@ -328,7 +415,6 @@ const isFormValid = computed(() => {
 	return (
 		form.value.ft_contract_address.trim() &&
 		!errors.value.ft_contract_address &&
-		!errors.value.poolNFT_version &&
 		!errors.value.serviceFeeRate &&
 		!errors.value.pubKeyLock &&
 		!errors.value.lpCostAmount &&
@@ -371,8 +457,7 @@ const handleSubmit = async () => {
 			{
 				flag: 'POOLNFT_MINT',
 				ft_contract_address: form.value.ft_contract_address.trim(),
-				poolNFT_version:
-					form.value.poolNFT_version === '' ? DEFAULT_VERSION : Number(form.value.poolNFT_version),
+				poolNFT_version: 2,
 				serviceFeeRate: form.value.serviceFeeRate
 					? Number(form.value.serviceFeeRate)
 					: Number(DEFAULT_SERVICE_FEE_RATE),
@@ -410,8 +495,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT MINT transaction sent successfully', 3000);
-		// 提交成功后清除缓存
+		// 提交成功后清除缓存并重置表单
 		handleSubmitSuccess();
+		resetForm();
 	} catch (error) {
 		console.error('POOLNFT MINT transaction error:', error);
 		const errorMsg =
@@ -434,24 +520,6 @@ watch(
 	},
 );
 
-watch(
-	() => form.value.poolNFT_version,
-	() => {
-		if (form.value.poolNFT_version === '') {
-			errors.value.poolNFT_version = '';
-			return;
-		}
-
-		if (
-			!Number.isInteger(Number(form.value.poolNFT_version)) ||
-			Number(form.value.poolNFT_version) <= 0
-		) {
-			errors.value.poolNFT_version = 'Version must be a positive integer';
-		} else {
-			errors.value.poolNFT_version = '';
-		}
-	},
-);
 
 watch(
 	() => form.value.serviceFeeRate,
@@ -500,18 +568,32 @@ watch(
 watch(
 	() => form.value.lpPlan,
 	() => {
-		if (!validatePositiveNumber(form.value.lpPlan)) {
-			errors.value.lpPlan = 'Liquidity plan must be a positive integer';
-		} else if (!Number.isInteger(Number(form.value.lpPlan))) {
-			errors.value.lpPlan = 'Liquidity plan must be a positive integer';
+		const lpPlanNum = Number(form.value.lpPlan);
+		if (!Number.isInteger(lpPlanNum) || (lpPlanNum !== 1 && lpPlanNum !== 2)) {
+			errors.value.lpPlan = 'Liquidity plan must be 1 or 2';
 		} else {
 			errors.value.lpPlan = '';
 		}
 	},
 );
 
+// 点击外部关闭下拉框
+const handleClickOutside = (event: MouseEvent) => {
+	const target = event.target as HTMLElement;
+	if (!target.closest('.custom-select')) {
+		isLpPlanOpen.value = false;
+	}
+};
+
 onMounted(async () => {
 	await getWalletInfo();
+	// 添加点击外部关闭下拉框的事件监听
+	document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+	// 移除事件监听
+	document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -564,5 +646,27 @@ onMounted(async () => {
 .form-item-input::placeholder {
 	color: var(--color-text-tertiary);
 	opacity: 0.6;
+}
+
+.form-item-control {
+	position: relative;
+}
+
+.select-dropdown {
+	border: 1px solid var(--form-border-color);
+	box-shadow: var(--shadow-md);
+	margin-top: 4px;
+	z-index: 1000;
+}
+
+.dropdown-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.check-icon {
+	flex-shrink: 0;
+	color: var(--color-primary);
 }
 </style>

@@ -218,6 +218,8 @@ const handleSignMessage = async () => {
 	}
 };
 
+
+
 // 检查钱包连接状态
 onMounted(async () => {
 	await getWalletInfo();

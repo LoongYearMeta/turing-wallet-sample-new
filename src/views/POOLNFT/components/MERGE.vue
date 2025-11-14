@@ -48,15 +48,11 @@
 			<label>PoolNFT Version</label>
 			<input
 				v-model="form.poolNFT_version"
-				type="number"
-				min="1"
-				step="1"
+				type="text"
 				class="form-item-input"
-				placeholder="Default 2"
+				readonly
+				value="2"
 			/>
-			<div v-if="errors.poolNFT_version" class="form-item-error">
-				{{ errors.poolNFT_version }}
-			</div>
 		</div>
 
 		<div class="form-item">
@@ -143,7 +139,6 @@ const form = ref<PoolNftMergeForm>({
 
 const errors = ref({
 	nft_contract_address: '',
-	poolNFT_version: '',
 });
 
 const sendResult = ref('');
@@ -154,11 +149,31 @@ const { handleSubmitSuccess } = useFormCache(form, {
 	clearOnSubmit: true,
 });
 
+// 重置表单到初始状态
+const resetForm = () => {
+	form.value = {
+		nft_contract_address: '',
+		poolNFT_version: DEFAULT_VERSION,
+		domain: '',
+	};
+	// 清空错误信息
+	Object.keys(errors.value).forEach((key) => {
+		errors.value[key as keyof typeof errors.value] = '';
+	});
+	// 清空发送结果
+	sendResult.value = '';
+};
+
 const validatePositiveInteger = (value: string) => {
-	if (!value || !value.trim()) {
-		return true;
-	}
-	const num = Number(value);
+	// 处理 null、undefined 或空值（空值视为有效）
+	if (value === null || value === undefined) return true;
+	
+	// 转换为字符串并去除空格
+	const strValue = String(value).trim();
+	if (!strValue) return true;
+	
+	// 转换为数字并验证
+	const num = Number(strValue);
 	return Number.isInteger(num) && num > 0;
 };
 
@@ -172,22 +187,12 @@ const validateForm = (): boolean => {
 		errors.value.nft_contract_address = '';
 	}
 
-	if (!validatePositiveInteger(form.value.poolNFT_version)) {
-		errors.value.poolNFT_version = 'PoolNFT version must be a positive integer';
-		isValid = false;
-	} else {
-		errors.value.poolNFT_version = '';
-	}
 
 	return isValid;
 };
 
 const isFormValid = computed(() => {
-	return (
-		form.value.nft_contract_address.trim() &&
-		!errors.value.nft_contract_address &&
-		!errors.value.poolNFT_version
-	);
+	return form.value.nft_contract_address.trim() && !errors.value.nft_contract_address;
 });
 
 const sendTransaction = async (params: any[]) => {
@@ -213,14 +218,11 @@ const handleSubmit = async () => {
 	isSubmitting.value = true;
 
 	try {
-		const versionValue = form.value.poolNFT_version.trim();
-		const version = versionValue ? Number(versionValue) : Number(DEFAULT_VERSION);
-
 		const params: any[] = [
 			{
 				flag: 'FTLP_MERGE',
 				nft_contract_address: form.value.nft_contract_address.trim(),
-				poolNFT_version: version,
+				poolNFT_version: 2,
 			},
 		];
 
@@ -239,8 +241,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FTLP Merge transaction sent successfully', 3000);
-		// 提交成功后清除缓存
+		// 提交成功后清除缓存并重置表单
 		handleSubmitSuccess();
+		resetForm();
 	} catch (error) {
 		console.error('FTLP Merge transaction error:', error);
 		const errorMsg =
@@ -263,16 +266,6 @@ watch(
 	},
 );
 
-watch(
-	() => form.value.poolNFT_version,
-	() => {
-		if (!validatePositiveInteger(form.value.poolNFT_version)) {
-			errors.value.poolNFT_version = 'PoolNFT version must be a positive integer';
-		} else {
-			errors.value.poolNFT_version = '';
-		}
-	},
-);
 
 onMounted(async () => {
 	await getWalletInfo();

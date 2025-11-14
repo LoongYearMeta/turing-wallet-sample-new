@@ -97,11 +97,9 @@
 				<label>Supply <span class="required">*</span></label>
 				<input
 					v-model="collectionForm.supply"
-					type="number"
+					type="text"
 					placeholder="Please input supply (e.g. 5)"
 					class="form-item-input-textarea"
-					min="1"
-					step="1"
 				/>
 				<div v-if="errors.supply" class="form-item-error">{{ errors.supply }}</div>
 			</div>

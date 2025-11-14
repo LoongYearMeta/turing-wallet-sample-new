@@ -58,10 +58,8 @@
 			<label>FT Amount <span class="required">*</span></label>
 			<input
 				v-model="form.ft_amount"
-				type="number"
+				type="text"
 				inputmode="decimal"
-				min="0"
-				step="0.00000001"
 				class="form-item-input"
 				placeholder="Default 10"
 			/>
@@ -72,24 +70,19 @@
 			<label>PoolNFT Version</label>
 			<input
 				v-model="form.poolNFT_version"
-				type="number"
-				inputmode="numeric"
-				min="1"
-				step="1"
+				type="text"
 				class="form-item-input"
-				placeholder="Default 2"
+				readonly
+				value="2"
 			/>
-			<div v-if="errors.poolNFT_version" class="form-item-error">{{ errors.poolNFT_version }}</div>
 		</div>
 
 		<div class="form-item">
 			<label>Liquidity Plan</label>
 			<input
 				v-model="form.lpPlan"
-				type="number"
+				type="text"
 				inputmode="numeric"
-				min="1"
-				step="1"
 				class="form-item-input"
 				placeholder="Default 1"
 			/>
@@ -190,7 +183,6 @@ const errors = ref({
 	nft_contract_address: '',
 	address: '',
 	ft_amount: '',
-	poolNFT_version: '',
 	lpPlan: '',
 });
 
@@ -202,16 +194,47 @@ const { handleSubmitSuccess } = useFormCache(form, {
 	clearOnSubmit: true,
 });
 
-const validatePositiveNumber = (value: string) => {
-	if (!value || !value.trim()) return false;
-	const num = Number(value);
+// 重置表单到初始状态
+const resetForm = () => {
+	form.value = {
+		nft_contract_address: '',
+		address: '',
+		ft_amount: DEFAULT_FT_AMOUNT,
+		poolNFT_version: DEFAULT_VERSION,
+		lpPlan: DEFAULT_LP_PLAN,
+		domain: '',
+	};
+	// 清空错误信息
+	Object.keys(errors.value).forEach((key) => {
+		errors.value[key as keyof typeof errors.value] = '';
+	});
+	// 清空发送结果
+	sendResult.value = '';
+};
+
+const validatePositiveNumber = (value: string | number | null | undefined) => {
+	// 处理 null、undefined 或空值
+	if (value === null || value === undefined) return false;
+	
+	// 转换为字符串并去除空格
+	const strValue = String(value).trim();
+	if (!strValue) return false;
+	
+	// 转换为数字并验证
+	const num = Number(strValue);
 	if (Number.isNaN(num)) return false;
 	return num > 0;
 };
 
-const validatePositiveInteger = (value: string) => {
-	if (!value || !value.trim()) return false;
-	const num = Number(value);
+const validatePositiveInteger = (value: string | number | null | undefined) => {
+	// 处理 null、undefined 或空值
+	if (value === null || value === undefined) return false;
+	
+	// 转换为字符串并去除空格
+	const strValue = String(value).trim();
+	if (!strValue) return false;
+	
+	const num = Number(strValue);
 	return Number.isInteger(num) && num > 0;
 };
 
@@ -239,16 +262,6 @@ const validateForm = () => {
 		errors.value.ft_amount = '';
 	}
 
-	if (
-		form.value.poolNFT_version !== '' &&
-		(!Number.isInteger(Number(form.value.poolNFT_version)) ||
-			Number(form.value.poolNFT_version) <= 0)
-	) {
-		errors.value.poolNFT_version = 'Version must be a positive integer';
-		isValid = false;
-	} else {
-		errors.value.poolNFT_version = '';
-	}
 
 	if (!validatePositiveInteger(form.value.lpPlan)) {
 		errors.value.lpPlan = 'Liquidity plan must be a positive integer';
@@ -269,7 +282,6 @@ const isFormValid = computed(() => {
 		!errors.value.nft_contract_address &&
 		!errors.value.address &&
 		!errors.value.ft_amount &&
-		!errors.value.poolNFT_version &&
 		!errors.value.lpPlan
 	);
 });
@@ -307,11 +319,7 @@ const handleSubmit = async () => {
 			},
 		];
 
-		const version =
-			form.value.poolNFT_version === '' ? undefined : Number(form.value.poolNFT_version);
-		if (version) {
-			params[0].poolNFT_version = version;
-		}
+		params[0].poolNFT_version = 2;
 
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();
@@ -334,8 +342,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT Swap To TBC transaction sent successfully', 3000);
-		// 提交成功后清除缓存
+		// 提交成功后清除缓存并重置表单
 		handleSubmitSuccess();
+		resetForm();
 	} catch (error) {
 		console.error('POOLNFT Swap To TBC transaction error:', error);
 		const errorMsg =
@@ -380,24 +389,6 @@ watch(
 	},
 );
 
-watch(
-	() => form.value.poolNFT_version,
-	() => {
-		if (form.value.poolNFT_version === '') {
-			errors.value.poolNFT_version = '';
-			return;
-		}
-
-		if (
-			!Number.isInteger(Number(form.value.poolNFT_version)) ||
-			Number(form.value.poolNFT_version) <= 0
-		) {
-			errors.value.poolNFT_version = 'Version must be a positive integer';
-		} else {
-			errors.value.poolNFT_version = '';
-		}
-	},
-);
 
 watch(
 	() => form.value.lpPlan,

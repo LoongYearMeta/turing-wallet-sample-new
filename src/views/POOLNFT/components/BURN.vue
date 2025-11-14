@@ -45,18 +45,14 @@
 		</div>
 
 		<div class="form-item">
-			<label>PoolNFT Version (Only 2 supported)</label>
+			<label>PoolNFT Version</label>
 			<input
 				v-model="form.poolNFT_version"
-				type="number"
-				min="1"
-				step="1"
+				type="text"
 				class="form-item-input"
-				placeholder="Default 2"
+				readonly
+				value="2"
 			/>
-			<div v-if="errors.poolNFT_version" class="form-item-error">
-				{{ errors.poolNFT_version }}
-			</div>
 		</div>
 
 		<div class="form-item">
@@ -143,7 +139,6 @@ const form = ref<PoolNftBurnForm>({
 
 const errors = ref({
 	nft_contract_address: '',
-	poolNFT_version: '',
 });
 
 const sendResult = ref('');
@@ -154,12 +149,19 @@ const { handleSubmitSuccess } = useFormCache(form, {
 	clearOnSubmit: true,
 });
 
-const validateVersion = (value: string) => {
-	if (!value || !value.trim()) {
-		return true;
-	}
-	const num = Number(value);
-	return Number.isInteger(num) && num === 2;
+// 重置表单到初始状态
+const resetForm = () => {
+	form.value = {
+		nft_contract_address: '',
+		poolNFT_version: DEFAULT_VERSION,
+		domain: '',
+	};
+	// 清空错误信息
+	Object.keys(errors.value).forEach((key) => {
+		errors.value[key as keyof typeof errors.value] = '';
+	});
+	// 清空发送结果
+	sendResult.value = '';
 };
 
 const validateForm = (): boolean => {
@@ -172,22 +174,11 @@ const validateForm = (): boolean => {
 		errors.value.nft_contract_address = '';
 	}
 
-	if (!validateVersion(form.value.poolNFT_version)) {
-		errors.value.poolNFT_version = 'PoolNFT version must be 2';
-		isValid = false;
-	} else {
-		errors.value.poolNFT_version = '';
-	}
-
 	return isValid;
 };
 
 const isFormValid = computed(() => {
-	return (
-		form.value.nft_contract_address.trim() &&
-		!errors.value.nft_contract_address &&
-		!errors.value.poolNFT_version
-	);
+	return form.value.nft_contract_address.trim() && !errors.value.nft_contract_address;
 });
 
 const walletSendTransaction = async (params: any[]) => {
@@ -221,14 +212,11 @@ const handleSubmit = async () => {
 	isSubmitting.value = true;
 
 	try {
-		const versionValue = form.value.poolNFT_version.trim();
-		const version = versionValue ? Number(versionValue) : Number(DEFAULT_VERSION);
-
 		const params: any[] = [
 			{
 				flag: 'POOLNFT_LP_BURN',
 				nft_contract_address: form.value.nft_contract_address.trim(),
-				poolNFT_version: version,
+				poolNFT_version: 2,
 			},
 		];
 
@@ -247,8 +235,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT LP Burn transaction sent successfully', 3000);
-		// 提交成功后清除缓存
+		// 提交成功后清除缓存并重置表单
 		handleSubmitSuccess();
+		resetForm();
 	} catch (error) {
 		console.error('POOLNFT LP Burn transaction error:', error);
 		const errorMsg =
@@ -271,16 +260,6 @@ watch(
 	},
 );
 
-watch(
-	() => form.value.poolNFT_version,
-	() => {
-		if (!validateVersion(form.value.poolNFT_version)) {
-			errors.value.poolNFT_version = 'PoolNFT version must be 2';
-		} else {
-			errors.value.poolNFT_version = '';
-		}
-	},
-);
 
 onMounted(async () => {
 	await getWalletInfo();

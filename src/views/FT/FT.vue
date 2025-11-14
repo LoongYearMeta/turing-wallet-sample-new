@@ -88,12 +88,9 @@
 				<label>Amount <span class="required">*</span></label>
 				<input
 					v-model="mintForm.amount"
-					type="number"
+					type="text"
 					placeholder="Please input token amount (max 21,000,000)"
 					class="form-item-input-textarea"
-					min="1"
-					max="21000000"
-					step="1"
 				/>
 				<div v-if="errors.amount" class="form-item-error">{{ errors.amount }}</div>
 			</div>
