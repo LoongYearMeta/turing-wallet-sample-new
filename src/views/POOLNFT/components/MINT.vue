@@ -201,6 +201,7 @@ import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
+import { useFormCache } from '../../../utils/useFormCache';
 
 interface PoolNftMintForm {
 	ft_contract_address: string;
@@ -253,6 +254,12 @@ const errors = ref({
 });
 
 const sendResult = ref('');
+
+// 表单缓存
+const { handleSubmitSuccess } = useFormCache(form, {
+	key: 'POOLNFT_MINT',
+	clearOnSubmit: true,
+});
 
 const validatePositiveNumber = (value: string, allowZero = false) => {
 	if (!value || !value.trim()) return false;
@@ -403,6 +410,8 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT MINT transaction sent successfully', 3000);
+		// 提交成功后清除缓存
+		handleSubmitSuccess();
 	} catch (error) {
 		console.error('POOLNFT MINT transaction error:', error);
 		const errorMsg =

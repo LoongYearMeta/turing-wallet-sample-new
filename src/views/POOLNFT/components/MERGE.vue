@@ -117,6 +117,7 @@ import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import MyTextarea from '../../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
+import { useFormCache } from '../../../utils/useFormCache';
 
 interface PoolNftMergeForm {
 	nft_contract_address: string;
@@ -146,6 +147,12 @@ const errors = ref({
 });
 
 const sendResult = ref('');
+
+// 表单缓存
+const { handleSubmitSuccess } = useFormCache(form, {
+	key: 'FTLP_MERGE',
+	clearOnSubmit: true,
+});
 
 const validatePositiveInteger = (value: string) => {
 	if (!value || !value.trim()) {
@@ -232,6 +239,8 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FTLP Merge transaction sent successfully', 3000);
+		// 提交成功后清除缓存
+		handleSubmitSuccess();
 	} catch (error) {
 		console.error('FTLP Merge transaction error:', error);
 		const errorMsg =
