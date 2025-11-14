@@ -142,6 +142,13 @@ const errors = ref({
 // 发送结果
 const sendResult = ref('');
 
+const resetForm = () => {
+	address.value = '';
+	satoshis.value = '';
+	errors.value.address = '';
+	errors.value.satoshis = '';
+};
+
 // 表单验证
 const validateForm = (): boolean => {
 	let isValid = true;
@@ -233,6 +240,7 @@ const handleSendP2PKH = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('P2PKH transaction sent successfully', 3000);
+		resetForm();
 	} catch (error) {
 		console.error('Send P2PKH transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send P2PKH transaction';

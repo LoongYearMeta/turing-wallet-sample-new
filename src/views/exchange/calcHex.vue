@@ -185,6 +185,14 @@ const hexInput = ref('');
 const hexHashResult = ref('');
 const isHexProcessing = ref(false);
 
+const resetAsmForm = () => {
+	asmInput.value = '';
+};
+
+const resetHexForm = () => {
+	hexInput.value = '';
+};
+
 const computeScriptHash = (hexScript: string) => {
 	const sanitizedHex = hexScript.replace(/\s+/g, '').toLowerCase();
 	if (!sanitizedHex) {
@@ -212,6 +220,7 @@ const handleAsmToHash = async () => {
 		asmHexResult.value = sanitizedHex;
 		asmHashResult.value = hash;
 		toastApi.showSuccess('Script hash generated successfully', 3000);
+		resetAsmForm();
 	} catch (error) {
 		console.error('ASM to script hash error:', error);
 		toastApi.showError('Failed to convert ASM script. Please verify the script.', 3000);
@@ -233,6 +242,7 @@ const handleHexToHash = async () => {
 		const { hash } = computeScriptHash(hexInput.value);
 		hexHashResult.value = hash;
 		toastApi.showSuccess('Script hash generated successfully', 3000);
+		resetHexForm();
 	} catch (error) {
 		console.error('HEX to script hash error:', error);
 		toastApi.showError('Failed to compute script hash. Please verify the HEX script.', 3000);

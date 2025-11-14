@@ -200,6 +200,14 @@ const isDecrypting = ref(false);
 const encryptMessage = ref('');
 const decryptMessage = ref('');
 
+const resetEncryptForm = () => {
+	encryptMessage.value = '';
+};
+
+const resetDecryptForm = () => {
+	decryptMessage.value = '';
+};
+
 // 表单结果
 const encryptResult = ref('');
 const decryptResult = ref('');
@@ -215,8 +223,10 @@ const handleEncryptMessage = async () => {
 	
 	try {
 		const response = await window.Turing.encrypt({ message: encryptMessage.value });
+		console.log('Encrypt response:', response);
 		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
 		encryptResult.value = formattedResponse;
+		resetEncryptForm();
 	} catch (error) {
 		console.error('Encrypt error:', error);
 		toastApi.showError('Failed to encrypt message', 3000);
@@ -239,6 +249,7 @@ const handleDecryptMessage = async () => {
 		const response = await window.Turing.decrypt({ message: decryptMessage.value });
 		const formattedResponse = JSON.stringify(response, null, 2).replace(/"/g, '');
 		decryptResult.value = formattedResponse;
+		resetDecryptForm();
 	} catch (error) {
 		console.error('Decrypt error:', error);
 		toastApi.showError('Failed to decrypt message', 3000);

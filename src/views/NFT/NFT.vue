@@ -381,7 +381,7 @@ const currentFunction = ref<'COLLECTION_CREATE' | 'NFT_CREATE' | 'NFT_TRANSFER'>
 const isSubmitting = ref(false);
 
 // COLLECTION_CREATE 表单数据
-const collectionForm = ref({
+const createDefaultCollectionForm = () => ({
 	collectionName: '',
 	description: '',
 	supply: '',
@@ -389,8 +389,10 @@ const collectionForm = ref({
 	domain: '',
 });
 
+const collectionForm = ref(createDefaultCollectionForm());
+
 // NFT_CREATE 表单数据
-const nftCreateForm = ref({
+const createDefaultNftCreateForm = () => ({
 	name: '',
 	description: '',
 	file: '',
@@ -400,12 +402,16 @@ const nftCreateForm = ref({
 	domain: '',
 });
 
+const nftCreateForm = ref(createDefaultNftCreateForm());
+
 // NFT_TRANSFER 表单数据
-const nftTransferForm = ref({
+const createDefaultNftTransferForm = () => ({
 	nft_contract_address: '',
 	address: '',
 	domain: '',
 });
+
+const nftTransferForm = ref(createDefaultNftTransferForm());
 
 // 文件相关
 const filePreview = ref('');
@@ -429,6 +435,32 @@ const errors = ref({
 
 // 发送结果
 const sendResult = ref('');
+
+const resetCollectionForm = () => {
+	collectionForm.value = createDefaultCollectionForm();
+	filePreview.value = '';
+	fileName.value = '';
+	errors.value.collectionName = '';
+	errors.value.description = '';
+	errors.value.supply = '';
+	errors.value.file = '';
+};
+
+const resetNftCreateForm = () => {
+	nftCreateForm.value = createDefaultNftCreateForm();
+	nftFilePreview.value = '';
+	nftFileName.value = '';
+	errors.value.name = '';
+	errors.value.description = '';
+	errors.value.file = '';
+	errors.value.collection_id = '';
+};
+
+const resetNftTransferForm = () => {
+	nftTransferForm.value = createDefaultNftTransferForm();
+	errors.value.nft_contract_address = '';
+	errors.value.address = '';
+};
 
 // Turing.sendTransaction 函数
 const sendTransaction = async (params: any[]) => {
@@ -752,6 +784,7 @@ const handleCollectionCreate = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('COLLECTION_CREATE transaction sent successfully', 3000);
+		resetCollectionForm();
 	} catch (error) {
 		console.error('COLLECTION_CREATE transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send COLLECTION_CREATE transaction';
@@ -812,6 +845,7 @@ const handleNftCreate = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_CREATE transaction sent successfully', 3000);
+		resetNftCreateForm();
 	} catch (error) {
 		console.error('NFT_CREATE transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_CREATE transaction';
@@ -863,6 +897,7 @@ const handleNftTransfer = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_TRANSFER transaction sent successfully', 3000);
+		resetNftTransferForm();
 	} catch (error) {
 		console.error('NFT_TRANSFER transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_TRANSFER transaction';

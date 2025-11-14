@@ -127,6 +127,7 @@ const handleDecodeTxraws = async () => {
 		const response = transaction.toObject();
 		decodedTxraw.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('Txraw decoded successfully', 3000);
+		txraw.value = '';
 	} catch (error) {
 		console.error('Decode txraw error:', error);
 		toastApi.showError('Failed to decode txraw', 3000);

@@ -287,8 +287,8 @@ const currentFunction = ref<'MINT' | 'TRANSFER'>('MINT');
 const isSubmitting = ref(false);
 
 // MINT 表单数据
-const mintForm = ref({
-  flag: "FT_MINT",
+const createDefaultMintForm = () => ({
+	flag: 'FT_MINT',
 	name: '',
 	symbol: '',
 	amount: '',
@@ -296,15 +296,19 @@ const mintForm = ref({
 	domain: '',
 });
 
+const mintForm = ref(createDefaultMintForm());
+
 // TRANSFER 表单数据
-const transferForm = ref({
-  flag: "FT_TRANSFER",
+const createDefaultTransferForm = () => ({
+	flag: 'FT_TRANSFER',
 	ft_contract_address: '',
 	ft_amount: '',
 	tbc_amount: '',
 	address: '',
 	domain: '',
 });
+
+const transferForm = ref(createDefaultTransferForm());
 
 // 表单错误信息
 const errors = ref({
@@ -319,6 +323,21 @@ const errors = ref({
 
 // 发送结果
 const sendResult = ref('');
+
+const resetMintFormState = () => {
+	mintForm.value = createDefaultMintForm();
+	errors.value.name = '';
+	errors.value.symbol = '';
+	errors.value.amount = '';
+};
+
+const resetTransferFormState = () => {
+	transferForm.value = createDefaultTransferForm();
+	errors.value.ft_contract_address = '';
+	errors.value.ft_amount = '';
+	errors.value.tbc_amount = '';
+	errors.value.address = '';
+};
 
 // Turing.sendTransaction 函数
 const sendTransaction = async (params: any[]) => {
@@ -518,6 +537,7 @@ const handleMint = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-MINT transaction sent successfully', 3000);
+		resetMintFormState();
 	} catch (error) {
 		console.error('FT-MINT transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send FT-MINT transaction';
@@ -575,6 +595,7 @@ const handleTransfer = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-TRANSFER transaction sent successfully', 3000);
+		resetTransferFormState();
 	} catch (error) {
 		console.error('FT-TRANSFER transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send FT-TRANSFER transaction';

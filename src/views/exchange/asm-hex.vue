@@ -184,6 +184,14 @@ const hexInput = ref('');
 const asmResult = ref('');
 const isConvertingHex = ref(false);
 
+const resetAsmForm = () => {
+	asmInput.value = '';
+};
+
+const resetHexForm = () => {
+	hexInput.value = '';
+};
+
 const handleAsmToHex = async () => {
 	if (!asmInput.value || !asmInput.value.trim()) {
 		toastApi.showError('Please enter an ASM script to convert', 3000);
@@ -195,6 +203,7 @@ const handleAsmToHex = async () => {
 		const scriptHex = tbc.Script.fromASM(asmInput.value.trim()).toHex();
 		hexResult.value = scriptHex;
 		toastApi.showSuccess('Converted ASM to HEX successfully', 3000);
+		resetAsmForm();
 	} catch (error) {
 		console.error('ASM to HEX error:', error);
 		toastApi.showError('Failed to convert ASM to HEX. Please verify the script.', 3000);
@@ -216,6 +225,7 @@ const handleHexToAsm = async () => {
 		const scriptAsm = tbc.Script.fromString(sanitizedHex).toASM();
 		asmResult.value = scriptAsm;
 		toastApi.showSuccess('Converted HEX to ASM successfully', 3000);
+		resetHexForm();
 	} catch (error) {
 		console.error('HEX to ASM error:', error);
 		toastApi.showError('Failed to convert HEX to ASM. Please verify the script.', 3000);

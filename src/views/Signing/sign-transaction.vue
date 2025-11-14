@@ -262,13 +262,20 @@ interface UtxoItem {
 }
 
 // 表单输入数据
-const txRawsList = ref<TxRawsItem[]>([
-	{ id: Date.now(), value: '' }
-]);
+const createEmptyTxRawItem = (): TxRawsItem => ({
+	id: Date.now() + Math.random(),
+	value: '',
+});
 
-const utxoList = ref<UtxoItem[]>([
-	{ id: Date.now(), satoshis: '', scriptPubkeys: '' }
-]);
+const createEmptyUtxoItem = (): UtxoItem => ({
+	id: Date.now() + Math.random(),
+	satoshis: '',
+	scriptPubkeys: '',
+});
+
+const txRawsList = ref<TxRawsItem[]>([createEmptyTxRawItem()]);
+
+const utxoList = ref<UtxoItem[]>([createEmptyUtxoItem()]);
 
 // 表单结果
 const signatureRes = ref('');
@@ -309,6 +316,21 @@ const errors = ref({
 	utxos_satoshis: '',
 	script_pubkeys: '',
 });
+
+const isResettingForm = ref(false);
+
+const resetSignForm = async () => {
+	isResettingForm.value = true;
+	txRawsList.value = [createEmptyTxRawItem()];
+	utxoList.value = [createEmptyUtxoItem()];
+	errors.value = {
+		txraws: '',
+		utxos_satoshis: '',
+		script_pubkeys: '',
+	};
+	await nextTick();
+	isResettingForm.value = false;
+};
 
 // 类型定义
 interface ParseRes<T> {
@@ -436,6 +458,11 @@ const parseScriptPubkeys = (input: string): ParseRes<string[][]> => {
 
 // 验证所有txraws
 const validateAllTxRaws = (): boolean => {
+	if (isResettingForm.value) {
+		errors.value.txraws = '';
+		return true;
+	}
+
 	for (const item of txRawsList.value) {
 		const result = parseTxRaws(item.value);
 		if (!result.valid) {
@@ -449,6 +476,12 @@ const validateAllTxRaws = (): boolean => {
 
 // 验证所有UTXO
 const validateAllUtxos = (): boolean => {
+	if (isResettingForm.value) {
+		errors.value.utxos_satoshis = '';
+		errors.value.script_pubkeys = '';
+		return true;
+	}
+
 	let hasSatoshisError = false;
 	let hasScriptPubkeysError = false;
 
@@ -497,16 +530,9 @@ const isFormValid = computed(() => {
 
 // 添加txraws（同时添加对应的UTXO）
 const addTxRaws = () => {
-	txRawsList.value.push({
-		id: Date.now() + Math.random(),
-		value: '',
-	});
+	txRawsList.value.push(createEmptyTxRawItem());
 	// 同步添加UTXO
-	utxoList.value.push({
-		id: Date.now() + Math.random(),
-		satoshis: '',
-		scriptPubkeys: '',
-	});
+	utxoList.value.push(createEmptyUtxoItem());
 };
 
 // 删除txraws（同时删除对应的UTXO）
@@ -607,6 +633,7 @@ const handleSignTransaction = async () => {
 		
 		console.log('Sign result:', signRes);
 		toastApi.showSuccess('Transaction signed successfully', 3000);
+		await resetSignForm();
 	} catch (error) {
 		console.error('Sign transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to sign transaction';

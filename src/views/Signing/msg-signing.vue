@@ -181,6 +181,10 @@ const selectedOption = ref<{ label: string; value: string }>(
 );
 const isOpen = ref(false);
 
+const resetSignForm = () => {
+	signMessage.value = '';
+};
+
 // 切换下拉菜单
 const toggleDropdown = () => {
 	isOpen.value = !isOpen.value;
@@ -209,6 +213,7 @@ const handleSignMessage = async () => {
 		const formattedResponse = JSON.stringify(response, null, 2);
 		signedMessage.value = formattedResponse;
 		toastApi.showSuccess('Message signed successfully', 3000);
+		resetSignForm();
 	} catch (error) {
 		console.error('Sign message error:', error);
 		toastApi.showError('Failed to sign message', 3000);
