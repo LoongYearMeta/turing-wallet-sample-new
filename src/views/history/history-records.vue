@@ -2,12 +2,42 @@
 	<div class="history-records-page">
 		<div class="page-header">
 			<h2>Transaction History</h2>
-			<button v-if="historyList.length > 0" @click="handleClearHistory" class="clear-btn">
+			<button v-if="allHistoryList.length > 0" @click="handleClearHistory" class="clear-btn">
 				Clear History
 			</button>
 		</div>
 		
-		<div v-if="historyList.length === 0" class="empty-state">
+		<div v-if="allHistoryList.length > 0" class="search-section">
+			<div class="search-box">
+				<svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="11" cy="11" r="8"></circle>
+					<path d="m21 21-4.35-4.35"></path>
+				</svg>
+				<input
+					v-model="searchKeyword"
+					type="text"
+					placeholder="Search by method (e.g., P2PKH, FT, NFT...)"
+					class="search-input"
+				/>
+				<button
+					v-if="searchKeyword"
+					@click="clearSearch"
+					class="clear-search-btn"
+					title="Clear search"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<line x1="18" y1="6" x2="6" y2="18"></line>
+						<line x1="6" y1="6" x2="18" y2="18"></line>
+					</svg>
+				</button>
+			</div>
+			<div v-if="searchKeyword" class="search-result-info">
+				Found {{ filteredHistoryList.length }} result{{ filteredHistoryList.length !== 1 ? 's' : '' }}
+				{{ searchKeyword ? `for "${searchKeyword}"` : '' }}
+			</div>
+		</div>
+		
+		<div v-if="filteredHistoryList.length === 0" class="empty-state">
 			<svg
 				t="1762506088732"
 				class="icon empty-icon"
@@ -23,14 +53,16 @@
 					opacity="0.3"
 				></path>
 			</svg>
-			<p>No transaction history yet</p>
-			<p class="empty-hint">Transaction records will appear here after you send transactions</p>
+			<p v-if="!searchKeyword">No transaction history yet</p>
+			<p v-else>No results found</p>
+			<p class="empty-hint" v-if="!searchKeyword">Transaction records will appear here after you send transactions</p>
+			<p class="empty-hint" v-else>Try adjusting your search keyword</p>
 		</div>
 		
 		<div v-else class="history-list">
 			<div
-				v-for="(item, index) in historyList"
-				:key="index"
+				v-for="item in filteredHistoryList"
+				:key="item.txid"
 				class="history-item"
 			>
 				<div class="history-item-header">
@@ -39,9 +71,9 @@
 						<span class="history-time">{{ formatTime(item.timestamp) }}</span>
 					</div>
 					<button
-						@click="toggleExpand(index)"
+						@click="toggleExpand(item.txid)"
 						class="expand-btn"
-						:class="{ expanded: expandedItems.has(index) }"
+						:class="{ expanded: expandedItems.has(item.txid) }"
 					>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<polyline points="6 9 12 15 18 9"></polyline>
@@ -58,7 +90,7 @@
 						<div class="history-value txid-value">{{ item.txid }}</div>
 					</div>
 					
-					<div v-if="expandedItems.has(index)" class="history-details">
+					<div v-if="expandedItems.has(item.txid)" class="history-details">
 						<div class="history-field">
 							<label>Request Params:</label>
 							<MyTextarea
@@ -88,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { getTransactionHistory, clearTransactionHistory, type TransactionHistoryItem } from '../../utils/transactionHistory';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
@@ -101,29 +133,49 @@ const toastApi = useToast();
 const walletStore = useWalletStore();
 const { walletInfo, isConnected } = storeToRefs(walletStore);
 
-// 历史记录列表
-const historyList = ref<TransactionHistoryItem[]>([]);
+// 所有历史记录列表（未过滤）
+const allHistoryList = ref<TransactionHistoryItem[]>([]);
 
-// 展开的项目索引集合
-const expandedItems = ref<Set<number>>(new Set());
+// 搜索关键词
+const searchKeyword = ref<string>('');
+
+// 根据搜索关键词过滤后的历史记录列表
+const filteredHistoryList = computed(() => {
+	if (!searchKeyword.value.trim()) {
+		return allHistoryList.value;
+	}
+	
+	const keyword = searchKeyword.value.trim().toLowerCase();
+	return allHistoryList.value.filter(item => {
+		return item.method.toLowerCase().includes(keyword);
+	});
+});
+
+// 展开的项目集合（使用txid作为唯一标识符）
+const expandedItems = ref<Set<string>>(new Set());
 
 // 加载历史记录（根据当前钱包地址）
 const loadHistory = () => {
 	if (isConnected.value && walletInfo.value.curAddress) {
-		historyList.value = getTransactionHistory(walletInfo.value.curAddress);
+		allHistoryList.value = getTransactionHistory(walletInfo.value.curAddress);
 	} else {
-		historyList.value = [];
+		allHistoryList.value = [];
 	}
 	// 清空展开状态
 	expandedItems.value.clear();
 };
 
+// 清除搜索
+const clearSearch = () => {
+	searchKeyword.value = '';
+};
+
 // 切换展开/收起
-const toggleExpand = (index: number) => {
-	if (expandedItems.value.has(index)) {
-		expandedItems.value.delete(index);
+const toggleExpand = (txid: string) => {
+	if (expandedItems.value.has(txid)) {
+		expandedItems.value.delete(txid);
 	} else {
-		expandedItems.value.add(index);
+		expandedItems.value.add(txid);
 	}
 };
 
@@ -136,7 +188,8 @@ const handleClearHistory = () => {
 	
 	if (confirm('Are you sure you want to clear all transaction history for this wallet?')) {
 		clearTransactionHistory(walletInfo.value.curAddress);
-		historyList.value = [];
+		allHistoryList.value = [];
+		searchKeyword.value = '';
 		expandedItems.value.clear();
 		toastApi.showSuccess('History cleared successfully', 3000);
 	}
@@ -216,7 +269,8 @@ watch(
 		if (newConnected) {
 			loadHistory();
 		} else {
-			historyList.value = [];
+			allHistoryList.value = [];
+			searchKeyword.value = '';
 			expandedItems.value.clear();
 		}
 	}
@@ -414,5 +468,77 @@ watch(
 .copy-btn:hover {
 	background-color: #ec8304;
 	color: white;
+}
+
+.search-section {
+	margin-bottom: var(--spacing-lg);
+}
+
+.search-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+	background-color: var(--form-bg-color);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-md);
+	padding: var(--spacing-sm) var(--spacing-md);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-box:focus-within {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px rgba(236, 131, 4, 0.1);
+}
+
+.search-icon {
+	width: 20px;
+	height: 20px;
+	color: var(--color-text-secondary);
+	margin-right: var(--spacing-sm);
+	flex-shrink: 0;
+}
+
+.search-input {
+	flex: 1;
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
+	padding: 0;
+}
+
+.search-input::placeholder {
+	color: var(--color-text-secondary);
+	opacity: 0.6;
+}
+
+.clear-search-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--color-text-secondary);
+	padding: var(--spacing-xs);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.2s ease;
+	margin-left: var(--spacing-xs);
+	flex-shrink: 0;
+}
+
+.clear-search-btn:hover {
+	color: var(--color-text-primary);
+}
+
+.clear-search-btn svg {
+	width: 18px;
+	height: 18px;
+}
+
+.search-result-info {
+	margin-top: var(--spacing-sm);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-small);
 }
 </style>

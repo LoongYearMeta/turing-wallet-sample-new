@@ -94,7 +94,6 @@
 				type="text"
 				class="form-item-input"
 				readonly
-				value="2"
 			/>
 		</div>
 
