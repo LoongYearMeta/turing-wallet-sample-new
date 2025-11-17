@@ -78,13 +78,59 @@
 
 		<div class="form-item">
 			<label>Liquidity Plan</label>
-			<input
-				v-model="form.lpPlan"
-				type="text"
-				inputmode="numeric"
-				class="form-item-input"
-				placeholder="Default 1"
-			/>
+			<div class="form-item-control">
+				<div class="custom-select" @click.stop="toggleLpPlanDropdown">
+					<div class="select-trigger">
+						<span>{{ currentLpPlanOption.label }}</span>
+					</div>
+					<svg
+						class="select-arrow"
+						:class="{ 'rotate-180': isLpPlanOpen }"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path
+							d="M7 10L12 15L17 10"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					<transition name="fade">
+						<div class="select-dropdown" v-if="isLpPlanOpen">
+							<div
+								class="dropdown-option"
+								v-for="option in lpPlanOptions"
+								:key="option.value"
+								@click.stop="selectLpPlan(option.value)"
+							>
+								{{ option.label }}
+								<svg
+									v-if="form.lpPlan === option.value"
+									class="check-icon"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+								>
+									<path
+										d="M20 6L9 17L4 12"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</div>
+						</div>
+					</transition>
+				</div>
+			</div>
 			<div v-if="errors.lpPlan" class="form-item-error">{{ errors.lpPlan }}</div>
 		</div>
 
@@ -140,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -189,6 +235,32 @@ const sendResult = ref('');
 
 // 是否正在重置表单（用于跳过验证）
 const isResetting = ref(false);
+
+// lpPlan 下拉框选项
+const lpPlanOptions = [
+	{ label: '1', value: '1' },
+	{ label: '2', value: '2' },
+];
+
+// lpPlan 下拉框状态
+const isLpPlanOpen = ref(false);
+
+// 当前选中的 lpPlan 选项
+const currentLpPlanOption = computed(() => {
+	const option = lpPlanOptions.find((item) => item.value === form.value.lpPlan) ?? lpPlanOptions[0];
+	return option ?? { label: '', value: form.value.lpPlan };
+});
+
+// 切换 lpPlan 下拉框
+const toggleLpPlanDropdown = () => {
+	isLpPlanOpen.value = !isLpPlanOpen.value;
+};
+
+// 选择 lpPlan 选项
+const selectLpPlan = (value: string) => {
+	form.value.lpPlan = value;
+	isLpPlanOpen.value = false;
+};
 
 // 表单缓存
 const { handleSubmitSuccess } = useFormCache(form, {
@@ -267,8 +339,9 @@ const validateForm = () => {
 	}
 
 
-	if (!validatePositiveInteger(form.value.lpPlan)) {
-		errors.value.lpPlan = 'Liquidity plan must be a positive integer';
+	const lpPlanNum = Number(form.value.lpPlan);
+	if (!Number.isInteger(lpPlanNum) || (lpPlanNum !== 1 && lpPlanNum !== 2)) {
+		errors.value.lpPlan = 'Liquidity plan must be 1 or 2';
 		isValid = false;
 	} else {
 		errors.value.lpPlan = '';
@@ -282,7 +355,8 @@ const isFormValid = computed(() => {
 		form.value.nft_contract_address.trim() &&
 		form.value.address.trim() &&
 		validatePositiveNumber(form.value.ft_amount) &&
-		validatePositiveInteger(form.value.lpPlan) &&
+		Number.isInteger(Number(form.value.lpPlan)) &&
+		(form.value.lpPlan === '1' || form.value.lpPlan === '2') &&
 		!errors.value.nft_contract_address &&
 		!errors.value.address &&
 		!errors.value.ft_amount &&
@@ -401,16 +475,30 @@ watch(
 	() => form.value.lpPlan,
 	() => {
 		if (isResetting.value) return;
-		if (!validatePositiveInteger(form.value.lpPlan)) {
-			errors.value.lpPlan = 'Liquidity plan must be a positive integer';
+		const lpPlanNum = Number(form.value.lpPlan);
+		if (!Number.isInteger(lpPlanNum) || (lpPlanNum !== 1 && lpPlanNum !== 2)) {
+			errors.value.lpPlan = 'Liquidity plan must be 1 or 2';
 		} else {
 			errors.value.lpPlan = '';
 		}
 	},
 );
 
+// 点击外部关闭下拉框
+const handleClickOutside = (event: MouseEvent) => {
+	const target = event.target as HTMLElement;
+	if (!target.closest('.custom-select')) {
+		isLpPlanOpen.value = false;
+	}
+};
+
 onMounted(async () => {
 	await getWalletInfo();
+	document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+	document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -444,5 +532,27 @@ onMounted(async () => {
 .form-item-input::placeholder {
 	color: var(--color-text-tertiary);
 	opacity: 0.6;
+}
+
+.form-item-control {
+	position: relative;
+}
+
+.select-dropdown {
+	border: 1px solid var(--form-border-color);
+	box-shadow: var(--shadow-md);
+	margin-top: 4px;
+	z-index: 1000;
+}
+
+.dropdown-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.check-icon {
+	flex-shrink: 0;
+	color: var(--color-primary);
 }
 </style>
