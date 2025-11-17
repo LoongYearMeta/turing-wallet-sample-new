@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -172,6 +172,9 @@ const errors = ref({
 
 const sendResult = ref('');
 
+// 是否正在重置表单（用于跳过验证）
+const isResetting = ref(false);
+
 // 表单缓存
 const { handleSubmitSuccess } = useFormCache(form, {
 	key: 'POOLNFT_LP_CONSUME',
@@ -179,7 +182,8 @@ const { handleSubmitSuccess } = useFormCache(form, {
 });
 
 // 重置表单到初始状态
-const resetForm = () => {
+const resetForm = async () => {
+	isResetting.value = true;
 	form.value = {
 		nft_contract_address: '',
 		address: '',
@@ -191,8 +195,9 @@ const resetForm = () => {
 	Object.keys(errors.value).forEach((key) => {
 		errors.value[key as keyof typeof errors.value] = '';
 	});
-	// 清空发送结果
-	sendResult.value = '';
+	// 注意：不清空发送结果，保持结果显示
+	await nextTick();
+	isResetting.value = false;
 };
 
 const validatePositiveNumber = (value: string | number | null | undefined) => {
@@ -303,9 +308,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT LP Consume transaction sent successfully', 3000);
-		// 提交成功后清除缓存并重置表单
+		// 提交成功后清除缓存并重置表单（不清空结果）
 		handleSubmitSuccess();
-		resetForm();
+		await resetForm();
 	} catch (error) {
 		console.error('POOLNFT LP Consume transaction error:', error);
 		const errorMsg =
@@ -320,6 +325,7 @@ const handleSubmit = async () => {
 watch(
 	() => form.value.nft_contract_address,
 	() => {
+		if (isResetting.value) return;
 		if (!form.value.nft_contract_address.trim()) {
 			errors.value.nft_contract_address = 'PoolNFT contract address is required';
 		} else {
@@ -331,6 +337,7 @@ watch(
 watch(
 	() => form.value.address,
 	() => {
+		if (isResetting.value) return;
 		if (!form.value.address.trim()) {
 			errors.value.address = 'Recipient address is required';
 		} else {
@@ -342,6 +349,7 @@ watch(
 watch(
 	() => form.value.ft_amount,
 	() => {
+		if (isResetting.value) return;
 		if (!validatePositiveNumber(form.value.ft_amount)) {
 			errors.value.ft_amount = 'FT amount must be a positive number';
 		} else {

@@ -235,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -294,6 +294,9 @@ const errors = ref({
 
 const sendResult = ref('');
 
+// 是否正在重置表单（用于跳过验证）
+const isResetting = ref(false);
+
 // lpPlan 下拉框选项
 const lpPlanOptions = [
 	{ label: '1', value: '1' },
@@ -327,7 +330,8 @@ const { handleSubmitSuccess } = useFormCache(form, {
 });
 
 // 重置表单到初始状态
-const resetForm = () => {
+const resetForm = async () => {
+	isResetting.value = true;
 	form.value = {
 		ft_contract_address: '',
 		poolNFT_version: DEFAULT_VERSION,
@@ -345,8 +349,9 @@ const resetForm = () => {
 	Object.keys(errors.value).forEach((key) => {
 		errors.value[key as keyof typeof errors.value] = '';
 	});
-	// 清空发送结果
-	sendResult.value = '';
+	// 注意：不清空发送结果，保持结果显示
+	await nextTick();
+	isResetting.value = false;
 };
 
 // 验证正数
@@ -491,9 +496,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT MINT transaction sent successfully', 3000);
-		// 提交成功后清除缓存并重置表单
+		// 提交成功后清除缓存并重置表单（不清空结果）
 		handleSubmitSuccess();
-		resetForm();
+		await resetForm();
 	} catch (error) {
 		console.error('POOLNFT MINT transaction error:', error);
 		const errorMsg =
@@ -508,6 +513,7 @@ const handleSubmit = async () => {
 watch(
 	() => form.value.ft_contract_address,
 	() => {
+		if (isResetting.value) return;
 		if (!form.value.ft_contract_address.trim()) {
 			errors.value.ft_contract_address = 'FT contract address is required';
 		} else {
@@ -519,6 +525,7 @@ watch(
 watch(
 	() => form.value.serviceFeeRate,
 	() => {
+		if (isResetting.value) return;
 		if (form.value.serviceFeeRate && !validatePositiveNumber(form.value.serviceFeeRate, true)) {
 			errors.value.serviceFeeRate = 'Service fee rate must be a non-negative number';
 		} else {
@@ -530,6 +537,7 @@ watch(
 watch(
 	() => form.value.pubKeyLockInput,
 	() => {
+		if (isResetting.value) return;
 		if (form.value.with_lock && parsePubKeyLock().length === 0) {
 			errors.value.pubKeyLock = 'At least one public key is required when hash lock is enabled';
 		} else {
@@ -541,6 +549,7 @@ watch(
 watch(
 	() => form.value.with_lock,
 	() => {
+		if (isResetting.value) return;
 		if (form.value.with_lock && parsePubKeyLock().length === 0) {
 			errors.value.pubKeyLock = 'At least one public key is required when hash lock is enabled';
 		} else {
@@ -552,6 +561,7 @@ watch(
 watch(
 	() => form.value.lpCostAmount,
 	() => {
+		if (isResetting.value) return;
 		if (form.value.lpCostAmount && !validatePositiveNumber(form.value.lpCostAmount, true)) {
 			errors.value.lpCostAmount = 'Liquidity cost amount must be a non-negative number';
 		} else {
@@ -563,6 +573,7 @@ watch(
 watch(
 	() => form.value.lpPlan,
 	() => {
+		if (isResetting.value) return;
 		const lpPlanNum = Number(form.value.lpPlan);
 		if (!Number.isInteger(lpPlanNum) || (lpPlanNum !== 1 && lpPlanNum !== 2)) {
 			errors.value.lpPlan = 'Liquidity plan must be 1 or 2';

@@ -51,7 +51,6 @@
 				type="text"
 				class="form-item-input"
 				readonly
-				value="2"
 			/>
 		</div>
 
@@ -107,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
@@ -143,6 +142,9 @@ const errors = ref({
 
 const sendResult = ref('');
 
+// 是否正在重置表单（用于跳过验证）
+const isResetting = ref(false);
+
 // 表单缓存
 const { handleSubmitSuccess } = useFormCache(form, {
 	key: 'FTLP_MERGE',
@@ -150,7 +152,8 @@ const { handleSubmitSuccess } = useFormCache(form, {
 });
 
 // 重置表单到初始状态
-const resetForm = () => {
+const resetForm = async () => {
+	isResetting.value = true;
 	form.value = {
 		nft_contract_address: '',
 		poolNFT_version: DEFAULT_VERSION,
@@ -160,8 +163,9 @@ const resetForm = () => {
 	Object.keys(errors.value).forEach((key) => {
 		errors.value[key as keyof typeof errors.value] = '';
 	});
-	// 清空发送结果
-	sendResult.value = '';
+	// 注意：不清空发送结果，保持结果显示
+	await nextTick();
+	isResetting.value = false;
 };
 
 const validatePositiveInteger = (value: string) => {
@@ -241,9 +245,9 @@ const handleSubmit = async () => {
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FTLP Merge transaction sent successfully', 3000);
-		// 提交成功后清除缓存并重置表单
+		// 提交成功后清除缓存并重置表单（不清空结果）
 		handleSubmitSuccess();
-		resetForm();
+		await resetForm();
 	} catch (error) {
 		console.error('FTLP Merge transaction error:', error);
 		const errorMsg =
@@ -258,6 +262,7 @@ const handleSubmit = async () => {
 watch(
 	() => form.value.nft_contract_address,
 	() => {
+		if (isResetting.value) return;
 		if (!form.value.nft_contract_address.trim()) {
 			errors.value.nft_contract_address = 'PoolNFT contract address is required';
 		} else {
@@ -274,5 +279,9 @@ onMounted(async () => {
 
 <style scoped>
 @import '../../../assets/form-page.css';
+.required {
+	color: var(--color-error);
+	font-weight: 600;
+}
 </style>
 
