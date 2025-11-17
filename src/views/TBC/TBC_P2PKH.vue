@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -142,11 +142,16 @@ const errors = ref({
 // 发送结果
 const sendResult = ref('');
 
-const resetForm = () => {
+const isResetting = ref(false);
+
+const resetForm = async () => {
+	isResetting.value = true;
 	address.value = '';
 	satoshis.value = '';
 	errors.value.address = '';
 	errors.value.satoshis = '';
+	await nextTick();
+	isResetting.value = false;
 };
 
 // 表单验证
@@ -240,7 +245,7 @@ const handleSendP2PKH = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('P2PKH transaction sent successfully', 3000);
-		resetForm();
+		await resetForm();
 	} catch (error) {
 		console.error('Send P2PKH transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send P2PKH transaction';
@@ -253,6 +258,7 @@ const handleSendP2PKH = async () => {
 
 // 实时验证
 watch(address, () => {
+	if (isResetting.value) return;
 	if (!address.value || !address.value.trim()) {
 		errors.value.address = 'Address is required';
 	} else {
@@ -261,6 +267,7 @@ watch(address, () => {
 });
 
 watch(satoshis, () => {
+	if (isResetting.value) return;
 	if (!satoshis.value || !satoshis.value.trim()) {
 		errors.value.satoshis = 'Satoshis is required';
 	} else {

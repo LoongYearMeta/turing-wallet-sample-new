@@ -265,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -324,19 +324,28 @@ const errors = ref({
 // 发送结果
 const sendResult = ref('');
 
-const resetMintFormState = () => {
+const isMintResetting = ref(false);
+const isTransferResetting = ref(false);
+
+const resetMintFormState = async () => {
+	isMintResetting.value = true;
 	mintForm.value = createDefaultMintForm();
 	errors.value.name = '';
 	errors.value.symbol = '';
 	errors.value.amount = '';
+	await nextTick();
+	isMintResetting.value = false;
 };
 
-const resetTransferFormState = () => {
+const resetTransferFormState = async () => {
+	isTransferResetting.value = true;
 	transferForm.value = createDefaultTransferForm();
 	errors.value.ft_contract_address = '';
 	errors.value.ft_amount = '';
 	errors.value.tbc_amount = '';
 	errors.value.address = '';
+	await nextTick();
+	isTransferResetting.value = false;
 };
 
 // Turing.sendTransaction 函数
@@ -537,7 +546,7 @@ const handleMint = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-MINT transaction sent successfully', 3000);
-		resetMintFormState();
+		await resetMintFormState();
 	} catch (error) {
 		console.error('FT-MINT transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send FT-MINT transaction';
@@ -595,7 +604,7 @@ const handleTransfer = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-TRANSFER transaction sent successfully', 3000);
-		resetTransferFormState();
+		await resetTransferFormState();
 	} catch (error) {
 		console.error('FT-TRANSFER transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send FT-TRANSFER transaction';
@@ -608,6 +617,7 @@ const handleTransfer = async () => {
 
 // 实时验证 - MINT
 watch(() => mintForm.value.name, () => {
+	if (isMintResetting.value) return;
 	if (!mintForm.value.name || !mintForm.value.name.trim()) {
 		errors.value.name = 'Name is required';
 	} else {
@@ -621,6 +631,7 @@ watch(() => mintForm.value.name, () => {
 });
 
 watch(() => mintForm.value.symbol, () => {
+	if (isMintResetting.value) return;
 	if (!mintForm.value.symbol || !mintForm.value.symbol.trim()) {
 		errors.value.symbol = 'Symbol is required';
 	} else {
@@ -634,6 +645,7 @@ watch(() => mintForm.value.symbol, () => {
 });
 
 watch(() => mintForm.value.amount, () => {
+	if (isMintResetting.value) return;
 	const amountValue = mintForm.value.amount;
 	if (amountValue === null || amountValue === undefined || amountValue === '') {
 		errors.value.amount = 'Amount is required';
@@ -653,6 +665,7 @@ watch(() => mintForm.value.amount, () => {
 
 // 实时验证 - TRANSFER
 watch(() => transferForm.value.ft_contract_address, () => {
+	if (isTransferResetting.value) return;
 	if (!transferForm.value.ft_contract_address || !transferForm.value.ft_contract_address.trim()) {
 		errors.value.ft_contract_address = 'FT Contract Address is required';
 	} else {
@@ -661,6 +674,7 @@ watch(() => transferForm.value.ft_contract_address, () => {
 });
 
 watch(() => transferForm.value.ft_amount, () => {
+	if (isTransferResetting.value) return;
 	if (!transferForm.value.ft_amount || !transferForm.value.ft_amount.trim()) {
 		errors.value.ft_amount = 'FT Amount is required';
 	} else {
@@ -674,6 +688,7 @@ watch(() => transferForm.value.ft_amount, () => {
 });
 
 watch(() => transferForm.value.tbc_amount, () => {
+	if (isTransferResetting.value) return;
 	if (transferForm.value.tbc_amount && transferForm.value.tbc_amount.trim()) {
 		const tbcAmountNum = Number(transferForm.value.tbc_amount.trim());
 		if (isNaN(tbcAmountNum) || tbcAmountNum <= 0) {
@@ -687,6 +702,7 @@ watch(() => transferForm.value.tbc_amount, () => {
 });
 
 watch(() => transferForm.value.address, () => {
+	if (isTransferResetting.value) return;
 	if (!transferForm.value.address || !transferForm.value.address.trim()) {
 		errors.value.address = 'Recipient Address is required';
 	} else {

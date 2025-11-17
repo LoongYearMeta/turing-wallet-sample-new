@@ -359,7 +359,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import { storeToRefs } from 'pinia';
@@ -436,7 +436,12 @@ const errors = ref({
 // 发送结果
 const sendResult = ref('');
 
-const resetCollectionForm = () => {
+const isCollectionResetting = ref(false);
+const isNftCreateResetting = ref(false);
+const isNftTransferResetting = ref(false);
+
+const resetCollectionForm = async () => {
+	isCollectionResetting.value = true;
 	collectionForm.value = createDefaultCollectionForm();
 	filePreview.value = '';
 	fileName.value = '';
@@ -444,9 +449,12 @@ const resetCollectionForm = () => {
 	errors.value.description = '';
 	errors.value.supply = '';
 	errors.value.file = '';
+	await nextTick();
+	isCollectionResetting.value = false;
 };
 
-const resetNftCreateForm = () => {
+const resetNftCreateForm = async () => {
+	isNftCreateResetting.value = true;
 	nftCreateForm.value = createDefaultNftCreateForm();
 	nftFilePreview.value = '';
 	nftFileName.value = '';
@@ -454,12 +462,17 @@ const resetNftCreateForm = () => {
 	errors.value.description = '';
 	errors.value.file = '';
 	errors.value.collection_id = '';
+	await nextTick();
+	isNftCreateResetting.value = false;
 };
 
-const resetNftTransferForm = () => {
+const resetNftTransferForm = async () => {
+	isNftTransferResetting.value = true;
 	nftTransferForm.value = createDefaultNftTransferForm();
 	errors.value.nft_contract_address = '';
 	errors.value.address = '';
+	await nextTick();
+	isNftTransferResetting.value = false;
 };
 
 // Turing.sendTransaction 函数
@@ -784,7 +797,7 @@ const handleCollectionCreate = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('COLLECTION_CREATE transaction sent successfully', 3000);
-		resetCollectionForm();
+		await resetCollectionForm();
 	} catch (error) {
 		console.error('COLLECTION_CREATE transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send COLLECTION_CREATE transaction';
@@ -845,7 +858,7 @@ const handleNftCreate = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_CREATE transaction sent successfully', 3000);
-		resetNftCreateForm();
+		await resetNftCreateForm();
 	} catch (error) {
 		console.error('NFT_CREATE transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_CREATE transaction';
@@ -897,7 +910,7 @@ const handleNftTransfer = async () => {
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_TRANSFER transaction sent successfully', 3000);
-		resetNftTransferForm();
+		await resetNftTransferForm();
 	} catch (error) {
 		console.error('NFT_TRANSFER transaction error:', error);
 		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_TRANSFER transaction';
@@ -910,6 +923,7 @@ const handleNftTransfer = async () => {
 
 // 实时验证 - COLLECTION_CREATE
 watch(() => collectionForm.value.collectionName, () => {
+	if (isCollectionResetting.value) return;
 	if (!collectionForm.value.collectionName || !collectionForm.value.collectionName.trim()) {
 		errors.value.collectionName = 'Collection Name is required';
 	} else {
@@ -918,6 +932,7 @@ watch(() => collectionForm.value.collectionName, () => {
 });
 
 watch(() => collectionForm.value.description, () => {
+	if (isCollectionResetting.value) return;
 	if (!collectionForm.value.description || !collectionForm.value.description.trim()) {
 		errors.value.description = 'Description is required';
 	} else {
@@ -926,6 +941,7 @@ watch(() => collectionForm.value.description, () => {
 });
 
 watch(() => collectionForm.value.supply, () => {
+	if (isCollectionResetting.value) return;
 	const supplyValue = collectionForm.value.supply;
 	if (supplyValue === null || supplyValue === undefined || supplyValue === '') {
 		errors.value.supply = 'Supply is required';
@@ -943,6 +959,7 @@ watch(() => collectionForm.value.supply, () => {
 
 // 实时验证 - NFT_CREATE
 watch(() => nftCreateForm.value.name, () => {
+	if (isNftCreateResetting.value) return;
 	if (!nftCreateForm.value.name || !nftCreateForm.value.name.trim()) {
 		errors.value.name = 'NFT Name is required';
 	} else {
@@ -951,6 +968,7 @@ watch(() => nftCreateForm.value.name, () => {
 });
 
 watch(() => nftCreateForm.value.description, () => {
+	if (isNftCreateResetting.value) return;
 	if (!nftCreateForm.value.description || !nftCreateForm.value.description.trim()) {
 		errors.value.description = 'Description is required';
 	} else {
@@ -959,6 +977,7 @@ watch(() => nftCreateForm.value.description, () => {
 });
 
 watch(() => nftCreateForm.value.collection_id, () => {
+	if (isNftCreateResetting.value) return;
 	if (!nftCreateForm.value.collection_id || !nftCreateForm.value.collection_id.trim()) {
 		errors.value.collection_id = 'Collection ID is required';
 	} else {
@@ -968,6 +987,7 @@ watch(() => nftCreateForm.value.collection_id, () => {
 
 // 实时验证 - NFT_TRANSFER
 watch(() => nftTransferForm.value.nft_contract_address, () => {
+	if (isNftTransferResetting.value) return;
 	if (!nftTransferForm.value.nft_contract_address || !nftTransferForm.value.nft_contract_address.trim()) {
 		errors.value.nft_contract_address = 'NFT Contract Address is required';
 	} else {
@@ -976,6 +996,7 @@ watch(() => nftTransferForm.value.nft_contract_address, () => {
 });
 
 watch(() => nftTransferForm.value.address, () => {
+	if (isNftTransferResetting.value) return;
 	if (!nftTransferForm.value.address || !nftTransferForm.value.address.trim()) {
 		errors.value.address = 'Recipient Address is required';
 	} else {
