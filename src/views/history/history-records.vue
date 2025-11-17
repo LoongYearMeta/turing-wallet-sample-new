@@ -51,7 +51,10 @@
 				
 				<div class="history-item-content">
 					<div class="history-field">
-						<label>TXID:</label>
+						<label>
+							<span class="copy-btn" @click="copyTxid(item.txid)">copy</span>
+							TXID:
+						</label>
 						<div class="history-value txid-value">{{ item.txid }}</div>
 					</div>
 					
@@ -137,6 +140,12 @@ const handleClearHistory = () => {
 		expandedItems.value.clear();
 		toastApi.showSuccess('History cleared successfully', 3000);
 	}
+};
+
+// 复制 TXID
+const copyTxid = (txid: string) => {
+	navigator.clipboard.writeText(txid);
+	toastApi.showSuccess('TXID copied to clipboard', 3000);
 };
 
 // 格式化时间
@@ -390,5 +399,20 @@ watch(
 
 .history-textarea {
 	font-size: var(--font-size-small);
+}
+
+.copy-btn {
+	color: var(--color-primary);
+	font-size: var(--font-size-small);
+	cursor: pointer;
+	border: 1px solid var(--color-primary);
+	padding: 4px;
+	border-radius: 6px;
+	background-color: #432d15;
+	transition: all 0.3s ease;
+}
+.copy-btn:hover {
+	background-color: #ec8304;
+	color: white;
 }
 </style>
