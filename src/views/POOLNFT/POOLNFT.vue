@@ -85,7 +85,8 @@ import PoolNftIncrease from './components/INCREASE.vue';
 import PoolNftConsume from './components/CONSUME.vue';
 import PoolNftToToken from './components/TO_TOKEN.vue';
 import PoolNftToTbc from './components/TO_TBC.vue';
-import PoolNftMerge from './components/MERGE.vue';
+import PoolNftMerge from './components/MERGE-POOLNFT.vue';
+import FTLPMerge from './components/MERGE-FTLP.vue';
 import PoolNftBurn from './components/BURN.vue';
 
 type PoolNftFunction =
@@ -95,6 +96,7 @@ type PoolNftFunction =
 	| 'POOLNFT_LP_CONSUME'
 	| 'POOLNFT_SWAP_TO_TOKEN'
 	| 'POOLNFT_SWAP_TO_TBC'
+	| 'POOLNFT_MERGE'
 	| 'FTLP_MERGE'
 	| 'POOLNFT_LP_BURN';
 
@@ -105,6 +107,7 @@ const functionOptions: Array<{ label: string; value: PoolNftFunction }> = [
 	{ label: 'POOLNFT LP Consume', value: 'POOLNFT_LP_CONSUME' },
 	{ label: 'POOLNFT Swap To Token', value: 'POOLNFT_SWAP_TO_TOKEN' },
 	{ label: 'POOLNFT Swap To TBC', value: 'POOLNFT_SWAP_TO_TBC' },
+	{ label: 'POOLNFT Merge', value: 'POOLNFT_MERGE' },
 	{ label: 'FTLP Merge', value: 'FTLP_MERGE' },
 	{ label: 'POOLNFT LP Burn', value: 'POOLNFT_LP_BURN' },
 ];
@@ -118,7 +121,8 @@ const componentMap: Record<PoolNftFunction, any> = {
 	POOLNFT_LP_CONSUME: PoolNftConsume,
 	POOLNFT_SWAP_TO_TOKEN: PoolNftToToken,
 	POOLNFT_SWAP_TO_TBC: PoolNftToTbc,
-	FTLP_MERGE: PoolNftMerge,
+	POOLNFT_MERGE: PoolNftMerge,
+	FTLP_MERGE: FTLPMerge,
 	POOLNFT_LP_BURN: PoolNftBurn,
 };
 

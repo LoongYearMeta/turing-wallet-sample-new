@@ -23,16 +23,18 @@
 						p-id="8003"
 					></path>
 				</svg>
-				<span>POOLNFT Swap To Token</span>
+				<span>POOLNFT Merge Form</span>
 			</div>
-			<p class="msg-form-description">Swap TBC to FT tokens within the PoolNFT.</p>
+			<p class="msg-form-description">
+				Configure POOLNFT Merge parameters and submit the transaction.
+			</p>
 		</div>
 
 		<div class="form-item">
 			<label>PoolNFT Contract Address <span class="required">*</span></label>
 			<MyTextarea
 				v-model="form.nft_contract_address"
-				placeholder="Please enter the pool NFT contract address"
+				placeholder="Please enter the PoolNFT contract address"
 				:readonly="false"
 				:copyable="true"
 				:deletable="true"
@@ -40,30 +42,6 @@
 			<div v-if="errors.nft_contract_address" class="form-item-error">
 				{{ errors.nft_contract_address }}
 			</div>
-		</div>
-
-		<div class="form-item">
-			<label>Recipient Address <span class="required">*</span></label>
-			<MyTextarea
-				v-model="form.address"
-				placeholder="Please enter the recipient address"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
-			/>
-			<div v-if="errors.address" class="form-item-error">{{ errors.address }}</div>
-		</div>
-
-		<div class="form-item">
-			<label>TBC Amount <span class="required">*</span></label>
-			<input
-				v-model="form.tbc_amount"
-				type="text"
-				inputmode="decimal"
-				class="form-item-input"
-				placeholder="Default 10"
-			/>
-			<div v-if="errors.tbc_amount" class="form-item-error">{{ errors.tbc_amount }}</div>
 		</div>
 
 		<div class="form-item">
@@ -77,18 +55,6 @@
 		</div>
 
 		<div class="form-item">
-			<label>Liquidity Plan</label>
-			<input
-				v-model="form.lpPlan"
-				type="text"
-				inputmode="numeric"
-				class="form-item-input"
-				placeholder="Default 1"
-			/>
-			<div v-if="errors.lpPlan" class="form-item-error">{{ errors.lpPlan }}</div>
-		</div>
-
-		<div class="form-item">
 			<label>Domain (Optional)</label>
 			<MyTextarea
 				v-model="form.domain"
@@ -99,10 +65,27 @@
 			/>
 		</div>
 
+		<div class="form-item">
+			<label>Merge Times (Optional)</label>
+			<input
+				v-model="form.merge_times"
+				type="text"
+				min="1"
+				max="10"
+				step="1"
+				class="form-item-input"
+				placeholder="Enter a number between 1 and 10"
+			/>
+			<small class="form-item-hint">Limits the number of merge executions (1-10)</small>
+			<div v-if="errors.merge_times" class="form-item-error">
+				{{ errors.merge_times }}
+			</div>
+		</div>
+
 		<div class="form-item-btn-container">
 			<button class="form-button-submit" type="submit" :disabled="!isFormValid || isSubmitting">
 				<span v-if="isSubmitting">Submitting...</span>
-				<span v-else>Swap To Token</span>
+				<span v-else>Send POOLNFT Merge</span>
 			</button>
 		</div>
 	</form>
@@ -126,12 +109,12 @@
 						p-id="21590"
 					></path>
 				</svg>
-				<span>POOLNFT Swap To Token Result</span>
+				<span>POOLNFT Merge Result</span>
 			</div>
 		</div>
 		<MyTextarea
 			v-model="sendResult"
-			placeholder="POOLNFT swap to token response will be displayed here"
+			placeholder="FTLP Merge response will be displayed here"
 			:readonly="true"
 			:copyable="true"
 			:deletable="false"
@@ -141,25 +124,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
-import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { useFormCache } from '../../../utils/useFormCache';
 
-interface PoolNftSwapToTokenForm {
+interface PoolNftMergeForm {
 	nft_contract_address: string;
-	address: string;
-	tbc_amount: string;
-	poolNFT_version: number | '';
-	lpPlan: string;
+	poolNFT_version: string;
 	domain: string;
+	merge_times: string;
 }
 
-const DEFAULT_TBC_AMOUNT = '10';
-const DEFAULT_VERSION = 2;
-const DEFAULT_LP_PLAN = '1';
+const DEFAULT_VERSION = '2';
 
 const walletStore = useWalletStore();
 const { walletInfo } = storeToRefs(walletStore);
@@ -169,20 +148,16 @@ const toastApi = useToast();
 
 const isSubmitting = ref(false);
 
-const form = ref<PoolNftSwapToTokenForm>({
+const form = ref<PoolNftMergeForm>({
 	nft_contract_address: '',
-	address: '',
-	tbc_amount: DEFAULT_TBC_AMOUNT,
 	poolNFT_version: DEFAULT_VERSION,
-	lpPlan: DEFAULT_LP_PLAN,
 	domain: '',
+	merge_times: '',
 });
 
 const errors = ref({
 	nft_contract_address: '',
-	address: '',
-	tbc_amount: '',
-	lpPlan: '',
+	merge_times: '',
 });
 
 const sendResult = ref('');
@@ -192,7 +167,7 @@ const isResetting = ref(false);
 
 // 表单缓存
 const { handleSubmitSuccess } = useFormCache(form, {
-	key: 'POOLNFT_SWAP_TO_TOKEN',
+	key: 'POOLNFT_MERGE',
 	clearOnSubmit: true,
 });
 
@@ -201,11 +176,9 @@ const resetForm = async () => {
 	isResetting.value = true;
 	form.value = {
 		nft_contract_address: '',
-		address: '',
-		tbc_amount: DEFAULT_TBC_AMOUNT,
 		poolNFT_version: DEFAULT_VERSION,
-		lpPlan: DEFAULT_LP_PLAN,
 		domain: '',
+		merge_times: '',
 	};
 	// 清空错误信息
 	Object.keys(errors.value).forEach((key) => {
@@ -216,33 +189,16 @@ const resetForm = async () => {
 	isResetting.value = false;
 };
 
-const validatePositiveNumber = (value: string | number | null | undefined) => {
-	// 处理 null、undefined 或空值
-	if (value === null || value === undefined) return false;
-	
-	// 转换为字符串并去除空格
-	const strValue = String(value).trim();
-	if (!strValue) return false;
-	
-	// 转换为数字并验证
-	const num = Number(strValue);
-	if (Number.isNaN(num)) return false;
-	return num > 0;
+const validateMergeTimes = (value: string) => {
+	const trimmed = value?.toString().trim() ?? '';
+	if (!trimmed) {
+		return true;
+	}
+	const num = Number(trimmed);
+	return Number.isInteger(num) && num >= 1 && num <= 10;
 };
 
-const validatePositiveInteger = (value: string | number | null | undefined) => {
-	// 处理 null、undefined 或空值
-	if (value === null || value === undefined) return false;
-	
-	// 转换为字符串并去除空格
-	const strValue = String(value).trim();
-	if (!strValue) return false;
-	
-	const num = Number(strValue);
-	return Number.isInteger(num) && num > 0;
-};
-
-const validateForm = () => {
+const validateForm = (): boolean => {
 	let isValid = true;
 
 	if (!form.value.nft_contract_address.trim()) {
@@ -252,27 +208,13 @@ const validateForm = () => {
 		errors.value.nft_contract_address = '';
 	}
 
-	if (!form.value.address.trim()) {
-		errors.value.address = 'Recipient address is required';
+	if (!validateMergeTimes(form.value.merge_times)) {
+		errors.value.merge_times = 'Merge times must be an integer between 1 and 10';
 		isValid = false;
 	} else {
-		errors.value.address = '';
+		errors.value.merge_times = '';
 	}
 
-	if (!validatePositiveNumber(form.value.tbc_amount)) {
-		errors.value.tbc_amount = 'TBC amount must be a positive number';
-		isValid = false;
-	} else {
-		errors.value.tbc_amount = '';
-	}
-
-
-	if (!validatePositiveInteger(form.value.lpPlan)) {
-		errors.value.lpPlan = 'Liquidity plan must be a positive integer';
-		isValid = false;
-	} else {
-		errors.value.lpPlan = '';
-	}
 
 	return isValid;
 };
@@ -280,13 +222,8 @@ const validateForm = () => {
 const isFormValid = computed(() => {
 	return (
 		form.value.nft_contract_address.trim() &&
-		form.value.address.trim() &&
-		validatePositiveNumber(form.value.tbc_amount) &&
-		validatePositiveInteger(form.value.lpPlan) &&
 		!errors.value.nft_contract_address &&
-		!errors.value.address &&
-		!errors.value.tbc_amount &&
-		!errors.value.lpPlan
+		!errors.value.merge_times
 	);
 });
 
@@ -315,44 +252,40 @@ const handleSubmit = async () => {
 	try {
 		const params: any[] = [
 			{
-				flag: 'POOLNFT_SWAP_TO_TOKEN',
+				flag: 'POOLNFT_MERGE',
 				nft_contract_address: form.value.nft_contract_address.trim(),
-				address: form.value.address.trim(),
-				tbc_amount: Number(form.value.tbc_amount),
-				lpPlan: Number(form.value.lpPlan),
+				poolNFT_version: 2,
 			},
 		];
 
-		params[0].poolNFT_version = 2;
-
-		if (form.value.domain.trim()) {
-			params[0].domain = form.value.domain.trim();
+		const domain = form.value.domain?.toString().trim();
+		if (domain) {
+			params[0].domain = domain;
 		}
 
-		console.log('POOLNFT_SWAP_TO_TOKEN Generated Data:', params);
+		const mergeTimes = form.value.merge_times?.toString().trim();
+		if (mergeTimes) {
+			params[0].merge_times = Number(mergeTimes);
+		}
+
+		console.log('POOLNFT_MERGE Generated Data:', params);
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
 
 		if (txid && walletInfo.value.curAddress) {
-			addTransactionHistory(
-				'POOLNFT_SWAP_TO_TOKEN',
-				txid,
-				response,
-				params,
-				walletInfo.value.curAddress,
-			);
+			addTransactionHistory('POOLNFT_MERGE', txid, response, params, walletInfo.value.curAddress);
 		}
 
 		sendResult.value = JSON.stringify(response, null, 2);
-		toastApi.showSuccess('POOLNFT Swap To Token transaction sent successfully', 3000);
+		toastApi.showSuccess('POOLNFT Merge transaction sent successfully', 3000);
 		// 提交成功后清除缓存并重置表单（不清空结果）
 		handleSubmitSuccess();
 		await resetForm();
 	} catch (error) {
-		console.error('POOLNFT Swap To Token transaction error:', error);
+		console.error('POOLNFT Merge transaction error:', error);
 		const errorMsg =
-			error instanceof Error ? error.message : 'Failed to send POOLNFT Swap To Token transaction';
+			error instanceof Error ? error.message : 'Failed to send POOLNFT Merge transaction';
 		toastApi.showError(errorMsg, 3000);
 		sendResult.value = '';
 	} finally {
@@ -373,41 +306,17 @@ watch(
 );
 
 watch(
-	() => form.value.address,
+	() => form.value.merge_times,
 	() => {
 		if (isResetting.value) return;
-		if (!form.value.address.trim()) {
-			errors.value.address = 'Recipient address is required';
+		if (!validateMergeTimes(form.value.merge_times)) {
+			errors.value.merge_times = 'Merge times must be an integer between 1 and 10';
 		} else {
-			errors.value.address = '';
+			errors.value.merge_times = '';
 		}
 	},
 );
 
-watch(
-	() => form.value.tbc_amount,
-	() => {
-		if (isResetting.value) return;
-		if (!validatePositiveNumber(form.value.tbc_amount)) {
-			errors.value.tbc_amount = 'TBC amount must be a positive number';
-		} else {
-			errors.value.tbc_amount = '';
-		}
-	},
-);
-
-
-watch(
-	() => form.value.lpPlan,
-	() => {
-		if (isResetting.value) return;
-		if (!validatePositiveInteger(form.value.lpPlan)) {
-			errors.value.lpPlan = 'Liquidity plan must be a positive integer';
-		} else {
-			errors.value.lpPlan = '';
-		}
-	},
-);
 
 onMounted(async () => {
 	await getWalletInfo();
@@ -416,33 +325,9 @@ onMounted(async () => {
 
 <style scoped>
 @import '../../../assets/form-page.css';
-
 .required {
 	color: var(--color-error);
 	font-weight: 600;
 }
-
-.form-item-input {
-	width: 100%;
-	padding: var(--spacing-xs);
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--form-border-color);
-	background-color: var(--form-item-bg-color);
-	color: var(--color-text-primary);
-	font-size: var(--font-size-subtitle);
-	font-family: var(--font-family-monospace);
-	box-sizing: border-box;
-	transition: all 0.2s ease;
-}
-
-.form-item-input:focus {
-	outline: none;
-	border-color: var(--color-primary);
-	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
-}
-
-.form-item-input::placeholder {
-	color: var(--color-text-tertiary);
-	opacity: 0.6;
-}
 </style>
+
