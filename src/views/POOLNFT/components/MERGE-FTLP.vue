@@ -168,19 +168,6 @@ const resetForm = async () => {
 	isResetting.value = false;
 };
 
-const validatePositiveInteger = (value: string) => {
-	// 处理 null、undefined 或空值（空值视为有效）
-	if (value === null || value === undefined) return true;
-	
-	// 转换为字符串并去除空格
-	const strValue = String(value).trim();
-	if (!strValue) return true;
-	
-	// 转换为数字并验证
-	const num = Number(strValue);
-	return Number.isInteger(num) && num > 0;
-};
-
 const validateForm = (): boolean => {
 	let isValid = true;
 
