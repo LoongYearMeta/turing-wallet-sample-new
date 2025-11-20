@@ -77,15 +77,15 @@
 		</div>
 
 		<div class="form-item">
-			<label>Locktime (Optional)</label>
+			<label>LockTime (Optional)</label>
 			<input
-				v-model="form.locktime"
+				v-model="form.lockTime"
 				type="text"
 				inputmode="numeric"
 				class="form-item-input"
 				placeholder="Block height to unlock (e.g. 900000)"
 			/>
-			<div v-if="errors.locktime" class="form-item-error">{{ errors.locktime }}</div>
+			<div v-if="errors.lockTime" class="form-item-error">{{ errors.lockTime }}</div>
 		</div>
 
 		<div class="form-item">
@@ -153,7 +153,7 @@ interface PoolNftIncreaseForm {
 	address: string;
 	tbc_amount: string;
 	poolNFT_version: number | '';
-	locktime: string;
+	lockTime: string;
 	domain: string;
 }
 
@@ -173,7 +173,7 @@ const form = ref<PoolNftIncreaseForm>({
 	address: '',
 	tbc_amount: DEFAULT_TBC_AMOUNT,
 	poolNFT_version: DEFAULT_VERSION,
-	locktime: '',
+	lockTime: '',
 	domain: '',
 });
 
@@ -181,7 +181,7 @@ const errors = ref({
 	nft_contract_address: '',
 	address: '',
 	tbc_amount: '',
-	locktime: '',
+	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -203,7 +203,7 @@ const resetForm = async () => {
 		address: '',
 		tbc_amount: DEFAULT_TBC_AMOUNT,
 		poolNFT_version: DEFAULT_VERSION,
-		locktime: '',
+		lockTime: '',
 		domain: '',
 	};
 	// 清空错误信息
@@ -255,13 +255,13 @@ const validateForm = () => {
 
 
 	if (
-		form.value.locktime &&
-		(!Number.isInteger(Number(form.value.locktime)) || Number(form.value.locktime) < 0)
+		form.value.lockTime &&
+		(!Number.isInteger(Number(form.value.lockTime)) || Number(form.value.lockTime) < 0)
 	) {
-		errors.value.locktime = 'Locktime must be a non-negative integer block height';
+		errors.value.lockTime = 'LockTime must be a non-negative integer block height';
 		isValid = false;
 	} else {
-		errors.value.locktime = '';
+		errors.value.lockTime = '';
 	}
 
 	return isValid;
@@ -275,7 +275,7 @@ const isFormValid = computed(() => {
 		!errors.value.nft_contract_address &&
 		!errors.value.address &&
 		!errors.value.tbc_amount &&
-		!errors.value.locktime
+		!errors.value.lockTime
 	);
 });
 
@@ -313,8 +313,8 @@ const handleSubmit = async () => {
 
 		params[0].poolNFT_version = 2;
 
-		if (form.value.locktime) {
-			params[0].locktime = Number(form.value.locktime);
+		if (form.value.lockTime) {
+			params[0].lockTime = Number(form.value.lockTime);
 		}
 
 		if (form.value.domain.trim()) {
@@ -390,21 +390,21 @@ watch(
 
 
 watch(
-	() => form.value.locktime,
+	() => form.value.lockTime,
 	() => {
 		if (isResetting.value) {
-			errors.value.locktime = '';
+			errors.value.lockTime = '';
 			return;
 		}
-		if (!form.value.locktime) {
-			errors.value.locktime = '';
+		if (!form.value.lockTime) {
+			errors.value.lockTime = '';
 			return;
 		}
 
-		if (!Number.isInteger(Number(form.value.locktime)) || Number(form.value.locktime) < 0) {
-			errors.value.locktime = 'Locktime must be a non-negative integer block height';
+		if (!Number.isInteger(Number(form.value.lockTime)) || Number(form.value.lockTime) < 0) {
+			errors.value.lockTime = 'LockTime must be a non-negative integer block height';
 		} else {
-			errors.value.locktime = '';
+			errors.value.lockTime = '';
 		}
 	},
 );
