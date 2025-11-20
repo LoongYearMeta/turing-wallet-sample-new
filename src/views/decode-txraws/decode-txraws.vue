@@ -137,11 +137,6 @@ const handleDecodeTxraws = async () => {
 	}
 };
 
-// 点击复制
-const handleCopy = () => {
-	navigator.clipboard.writeText(decodedTxraw.value);
-	toastApi.showSuccess('Copied to clipboard', 3000);
-};
 // 检查钱包连接状态
 onMounted(async () => {
 	await getWalletInfo();

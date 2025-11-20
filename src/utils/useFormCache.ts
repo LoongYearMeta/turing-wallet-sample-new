@@ -3,7 +3,7 @@
  * 用于自动保存和恢复表单数据，提升用户体验
  */
 
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { watch, onMounted, onBeforeUnmount } from 'vue';
 import { getLocalStorage, setLocalStorage, removeLocalStorage } from './storage';
 
 /**

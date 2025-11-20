@@ -302,18 +302,6 @@ const validatePositiveNumber = (value: string | number | null | undefined) => {
 	return num > 0;
 };
 
-const validatePositiveInteger = (value: string | number | null | undefined) => {
-	// 处理 null、undefined 或空值
-	if (value === null || value === undefined) return false;
-	
-	// 转换为字符串并去除空格
-	const strValue = String(value).trim();
-	if (!strValue) return false;
-	
-	const num = Number(strValue);
-	return Number.isInteger(num) && num > 0;
-};
-
 const validateForm = () => {
 	let isValid = true;
 
