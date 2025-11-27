@@ -17,9 +17,16 @@
 		</div>
 		<div class="header-right">
 			<!-- 如果钱包已连接且有地址，显示钱包地址 -->
-			<div class="wallet-address-badge" v-if="isConnected && walletAddress">
+			<button
+				v-if="isConnected && walletAddress"
+				type="button"
+				class="wallet-address-badge"
+				@click="copyAddress"
+				:aria-label="`复制地址 ${walletAddress}`"
+				title="点击复制地址"
+			>
 				<span class="wallet-address-text">{{ displayAddress }}</span>
-			</div>
+			</button>
 			<!-- 如果钱包未连接，显示连接钱包按钮 -->
 			<button v-else @click="handleConnectWallet" class="connect-btn">Connect Wallet</button>
 		</div>
@@ -57,6 +64,30 @@ const pageTitle = computed(() => {
 const walletAddress = computed(() => {
 	return isConnected.value ? walletInfo.value.curAddress : '';
 });
+
+const copyAddress = async () => {
+	if (!walletAddress.value) return;
+	const address = walletAddress.value;
+	try {
+		if (navigator?.clipboard?.writeText) {
+			await navigator.clipboard.writeText(address);
+		} else {
+			const textarea = document.createElement('textarea');
+			textarea.value = address;
+			textarea.style.position = 'fixed';
+			textarea.style.opacity = '0';
+			document.body.appendChild(textarea);
+			textarea.focus();
+			textarea.select();
+			document.execCommand('copy');
+			document.body.removeChild(textarea);
+		}
+		toastApi.showSuccess('Address copied', 2000);
+	} catch (error) {
+		console.error('Failed to copy address', error);
+		toastApi.showError('Failed to copy address', 2000);
+	}
+};
 
 const handleConnectWallet = async () => {
 	await walletStore.getAddress();
@@ -188,9 +219,13 @@ onUnmounted(() => {
 	transition: all 0.3s ease;
 	max-width: 100%;
 	min-width: 0;
+	cursor: pointer;
+	gap: var(--spacing-xxs);
+	outline: none;
 }
 
-.wallet-address-badge:hover {
+.wallet-address-badge:hover,
+.wallet-address-badge:focus-visible {
 	background-color: rgba(255, 140, 0, 0.15);
 }
 
