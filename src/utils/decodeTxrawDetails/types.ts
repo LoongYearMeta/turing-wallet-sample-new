@@ -2,6 +2,17 @@
  * 交易解码相关的类型定义
  */
 
+// 导入 FT/NFT 相关类型
+import type {
+	ParsedFTNFTTransaction,
+	TransactionType,
+	FTMintData,
+	FTTransferData,
+	NFTCreateData,
+	NFTTransferData,
+	CollectionCreateData,
+} from './ftNftParser';
+
 /**
  * 脚本类型
  */
@@ -66,5 +77,17 @@ export interface TransactionDetail {
 	inputs: DecodedInput[];
 	outputs: DecodedOutput[];
 	nLockTime: number;
+	ftNftInfo?: ParsedFTNFTTransaction; // FT/NFT 交易信息
 }
+
+// 重新导出类型供外部使用
+export type {
+	ParsedFTNFTTransaction,
+	TransactionType,
+	FTMintData,
+	FTTransferData,
+	NFTCreateData,
+	NFTTransferData,
+	CollectionCreateData,
+};
 
