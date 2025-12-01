@@ -203,8 +203,9 @@ const isFormValid = computed(() => {
 
 // walletSendTransaction 函数
 // 支持全局函数、window.Turing.sendTransaction 或 window.walletSendTransaction
+// 注意：参数中允许 boolean 类型字段（如 broadcastEnabled）
 const walletSendTransaction = async (
-	result: { flag: string; [key: string]: string | number }[],
+	result: { flag: string; [key: string]: string | number | boolean }[],
 ) => {
 	if (typeof window === 'undefined') {
 		throw new Error('window is not defined');
@@ -248,7 +249,7 @@ const handleSendP2PKH = async () => {
 
 		// broadcastEnabled：默认 true，仅在为 false 时显式下发
 		if (!broadcastEnabled.value) {
-			result[0].broadcastEnabled = false;
+			result[0]!.broadcastEnabled = false;
 		}
 
 		console.log('Generated Data:', result);
@@ -310,35 +311,4 @@ onMounted(async () => {
 
 <style scoped>
 @import '../../assets/form-page.css';
-
-.page-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	margin-bottom: var(--spacing-lg);
-}
-
-.history-link {
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-xs);
-	padding: var(--spacing-xs) var(--spacing-sm);
-	border-radius: var(--radius-sm);
-	background-color: var(--form-bg-color);
-	border: 1px solid var(--form-border-color);
-	color: var(--color-primary);
-	text-decoration: none;
-	font-size: var(--font-size-subtitle);
-	transition: all 0.2s ease;
-}
-
-.history-link:hover {
-	background-color: var(--color-primary);
-	color: white;
-	border-color: var(--color-primary);
-}
-
-.history-link svg {
-	flex-shrink: 0;
-}
 </style>

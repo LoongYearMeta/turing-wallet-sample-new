@@ -2,6 +2,13 @@
 	padding: var(--spacing-sm);
 }
 
+.page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: var(--spacing-lg);
+}
+
 .page-title {
 	color: var(--color-primary);
 	font-size: var(--font-size-title);
@@ -133,6 +140,49 @@
 }
 
 /* input styles */
+.required {
+	color: var(--color-error);
+	font-weight: 600;
+}
+
+/* Input styled like textarea */
+.form-item-input-textarea {
+	width: 100%;
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--form-item-bg-color);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
+	font-family: var(--font-family-monospace);
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+}
+
+.form-item-input-textarea:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+}
+
+.form-item-input-textarea:disabled {
+	background-color: var(--form-btn-disabled-color);
+	color: var(--color-text-secondary);
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.form-item-input-textarea:read-only {
+	background-color: var(--form-item-bg-color);
+	cursor: default;
+	opacity: 0.9;
+}
+
+.form-item-input-textarea::placeholder {
+	color: var(--color-text-tertiary);
+	opacity: 0.6;
+}
+
 .form-item-inputs {
 	display: flex;
 	flex: 1;
@@ -299,6 +349,31 @@
 
 .msg-result {
 	margin-top: var(--spacing-md);
+}
+
+/* history link styles */
+.history-link {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	padding: var(--spacing-xs) var(--spacing-sm);
+	border-radius: var(--radius-sm);
+	background-color: var(--form-bg-color);
+	border: 1px solid var(--form-border-color);
+	color: var(--color-primary);
+	text-decoration: none;
+	font-size: var(--font-size-subtitle);
+	transition: all 0.2s ease;
+}
+
+.history-link:hover {
+	background-color: var(--color-primary);
+	color: white;
+	border-color: var(--color-primary);
+}
+
+.history-link svg {
+	flex-shrink: 0;
 }
 
 /* error message styles */
