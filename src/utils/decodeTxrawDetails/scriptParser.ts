@@ -247,6 +247,18 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 					result.codeType = secondPart;
 				}
 				
+				// 如果是 Code Script 相关数据（codeType 为 "2Code"），只保留 address 字段，移除冗余字段
+				if (result.codeType === '2Code') {
+					const cleanedResult: ScriptOpReturnData = {};
+					if (result.address) {
+						cleanedResult.address = result.address;
+					} else if (result.hash) {
+						// 如果没有 address 但有 hash，保留 hash（虽然这种情况在 Code Script 中很少见）
+						cleanedResult.hash = result.hash;
+					}
+					return cleanedResult;
+				}
+				
 				return result;
 			}
 		}
@@ -264,10 +276,19 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 			codeType = parts[1] || '';
 		}
 		
-		return {
+		const result: ScriptOpReturnData = {
 			publicKeyHash: parts[0],
 			codeType: codeType,
 		};
+		
+		// 如果是 Code Script 相关数据（codeType 为 "2Code"），只保留必要字段
+		// 注意：这种情况下没有 address，所以返回空对象或保留原始数据
+		if (codeType === '2Code') {
+			// 如果没有 address，返回空对象（因为无法从 publicKeyHash 直接解码地址）
+			return {};
+		}
+		
+		return result;
 	}
 
 	// 其他情况保留 hex/ASCII 以便调试
