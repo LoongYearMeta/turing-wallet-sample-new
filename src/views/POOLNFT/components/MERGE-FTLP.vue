@@ -55,20 +55,6 @@
 		</div>
 
 		<div class="form-item">
-			<label>Lock Time (Optional)</label>
-			<input
-				v-model="form.lockTime"
-				type="text"
-				inputmode="numeric"
-				class="form-item-input"
-				placeholder="Lock until block height, e.g. 900000"
-			/>
-			<div v-if="errors.lockTime" class="form-item-error">
-				{{ errors.lockTime }}
-			</div>
-		</div>
-
-		<div class="form-item">
 			<label>Domain (Optional)</label>
 			<MyTextarea
 				v-model="form.domain"
@@ -131,7 +117,6 @@ import { useFormCache } from '../../../utils/useFormCache';
 interface PoolNftMergeForm {
 	nft_contract_address: string;
 	poolNFT_version: string;
-	lockTime: string;
 	domain: string;
 }
 
@@ -148,13 +133,11 @@ const isSubmitting = ref(false);
 const form = ref<PoolNftMergeForm>({
 	nft_contract_address: '',
 	poolNFT_version: DEFAULT_VERSION,
-	lockTime: '',
 	domain: '',
 });
 
 const errors = ref({
 	nft_contract_address: '',
-	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -174,7 +157,6 @@ const resetForm = async () => {
 	form.value = {
 		nft_contract_address: '',
 		poolNFT_version: DEFAULT_VERSION,
-		lockTime: '',
 		domain: '',
 	};
 	// 清空错误信息
@@ -194,19 +176,6 @@ const validateForm = (): boolean => {
 		isValid = false;
 	} else {
 		errors.value.nft_contract_address = '';
-	}
-
-	// lockTime 为可选字段，若填写则需要是正数
-	if (form.value.lockTime && form.value.lockTime.trim()) {
-		const lockTimeNum = Number(form.value.lockTime.trim());
-		if (Number.isNaN(lockTimeNum) || lockTimeNum <= 0) {
-			errors.value.lockTime = 'Lock time must be a positive number';
-			isValid = false;
-		} else {
-			errors.value.lockTime = '';
-		}
-	} else {
-		errors.value.lockTime = '';
 	}
 
 
@@ -248,11 +217,6 @@ const handleSubmit = async () => {
 			},
 		];
 
-		// lockTime 为可选字段
-		if (form.value.lockTime && form.value.lockTime.trim()) {
-			params[0].lockTime = Number(form.value.lockTime.trim());
-		}
-
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();
 		}
@@ -261,11 +225,8 @@ const handleSubmit = async () => {
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('FTLP_MERGE', txid, response, params, walletInfo.value.curAddress);
 		}
 
@@ -293,23 +254,6 @@ watch(
 			errors.value.nft_contract_address = 'PoolNFT contract address is required';
 		} else {
 			errors.value.nft_contract_address = '';
-		}
-	},
-);
-
-watch(
-	() => form.value.lockTime,
-	() => {
-		if (isResetting.value) return;
-		if (form.value.lockTime && form.value.lockTime.trim()) {
-			const lockTimeNum = Number(form.value.lockTime.trim());
-			if (Number.isNaN(lockTimeNum) || lockTimeNum <= 0) {
-				errors.value.lockTime = 'Lock time must be a positive number';
-			} else {
-				errors.value.lockTime = '';
-			}
-		} else {
-			errors.value.lockTime = '';
 		}
 	},
 );

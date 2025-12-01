@@ -67,25 +67,8 @@
 		</div>
 
 		<div class="form-item">
-			<label>Lock Time (Optional)</label>
-			<input
-				v-model="form.lockTime"
-				type="text"
-				inputmode="numeric"
-				class="form-item-input"
-				placeholder="Lock until block height, e.g. 900000"
-			/>
-			<div v-if="errors.lockTime" class="form-item-error">{{ errors.lockTime }}</div>
-		</div>
-
-		<div class="form-item">
 			<label>PoolNFT Version</label>
-			<input
-				v-model="form.poolNFT_version"
-				type="text"
-				class="form-item-input"
-				readonly
-			/>
+			<input v-model="form.poolNFT_version" type="text" class="form-item-input" readonly />
 		</div>
 
 		<div class="form-item">
@@ -97,6 +80,14 @@
 				:copyable="true"
 				:deletable="true"
 			/>
+		</div>
+
+		<!-- broadcastEnabled -->
+		<div class="form-item checkbox-item">
+			<label class="checkbox-label">
+				<input type="checkbox" v-model="form.broadcastEnabled" />
+				<span>Enable Broadcast (`broadcastEnabled`)</span>
+			</label>
 		</div>
 
 		<div class="form-item-btn-container">
@@ -153,8 +144,8 @@ interface PoolNftConsumeForm {
 	address: string;
 	ft_amount: string;
 	poolNFT_version: number | '';
-	lockTime: string;
 	domain: string;
+	broadcastEnabled: boolean;
 }
 
 const DEFAULT_FT_AMOUNT = '100';
@@ -173,15 +164,14 @@ const form = ref<PoolNftConsumeForm>({
 	address: '',
 	ft_amount: DEFAULT_FT_AMOUNT,
 	poolNFT_version: DEFAULT_VERSION,
-	lockTime: '',
 	domain: '',
+	broadcastEnabled: true,
 });
 
 const errors = ref({
 	nft_contract_address: '',
 	address: '',
 	ft_amount: '',
-	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -203,8 +193,8 @@ const resetForm = async () => {
 		address: '',
 		ft_amount: DEFAULT_FT_AMOUNT,
 		poolNFT_version: DEFAULT_VERSION,
-		lockTime: '',
 		domain: '',
+		broadcastEnabled: true,
 	};
 	// 清空错误信息
 	Object.keys(errors.value).forEach((key) => {
@@ -218,11 +208,11 @@ const resetForm = async () => {
 const validatePositiveNumber = (value: string | number | null | undefined) => {
 	// 处理 null、undefined 或空值
 	if (value === null || value === undefined) return false;
-	
+
 	// 转换为字符串并去除空格
 	const strValue = String(value).trim();
 	if (!strValue) return false;
-	
+
 	// 转换为数字并验证
 	const num = Number(strValue);
 	if (Number.isNaN(num)) return false;
@@ -252,19 +242,6 @@ const validateForm = () => {
 	} else {
 		errors.value.ft_amount = '';
 	}
-
-	// lockTime 为可选字段，若填写则需要是正数
-	if (form.value.lockTime && form.value.lockTime.trim()) {
-		if (!validatePositiveNumber(form.value.lockTime)) {
-			errors.value.lockTime = 'Lock time must be a positive number';
-			isValid = false;
-		} else {
-			errors.value.lockTime = '';
-		}
-	} else {
-		errors.value.lockTime = '';
-	}
-
 
 	return isValid;
 };
@@ -314,24 +291,20 @@ const handleSubmit = async () => {
 
 		params[0].poolNFT_version = 2;
 
-		// lockTime 为可选字段
-		if (form.value.lockTime && form.value.lockTime.trim()) {
-			params[0].lockTime = Number(form.value.lockTime.trim());
-		}
-
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();
+		}
+
+		if (!form.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
 		}
 
 		console.log('POOLNFT_LP_CONSUME Generated Data:', params);
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (form.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory(
 				'POOLNFT_LP_CONSUME',
 				txid,
@@ -392,23 +365,6 @@ watch(
 		}
 	},
 );
-
-watch(
-	() => form.value.lockTime,
-	() => {
-		if (isResetting.value) return;
-		if (form.value.lockTime && form.value.lockTime.trim()) {
-			if (!validatePositiveNumber(form.value.lockTime)) {
-				errors.value.lockTime = 'Lock time must be a positive number';
-			} else {
-				errors.value.lockTime = '';
-			}
-		} else {
-			errors.value.lockTime = '';
-		}
-	},
-);
-
 
 onMounted(async () => {
 	await getWalletInfo();

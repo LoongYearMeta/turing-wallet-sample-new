@@ -489,11 +489,8 @@ const handleSubmit = async () => {
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
 

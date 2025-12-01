@@ -89,12 +89,7 @@
 		<!-- poolNFT_version -->
 		<div class="form-item">
 			<label>PoolNFT Version</label>
-			<input
-				v-model="form.poolNFT_version"
-				type="text"
-				class="form-item-input"
-				readonly
-			/>
+			<input v-model="form.poolNFT_version" type="text" class="form-item-input" readonly />
 		</div>
 
 		<!-- lockTime -->
@@ -120,6 +115,14 @@
 				:copyable="true"
 				:deletable="true"
 			/>
+		</div>
+
+		<!-- broadcastEnabled -->
+		<div class="form-item checkbox-item">
+			<label class="checkbox-label">
+				<input type="checkbox" v-model="form.broadcastEnabled" />
+				<span>Enable Broadcast (`broadcastEnabled`)</span>
+			</label>
 		</div>
 
 		<div class="form-item-btn-container">
@@ -180,6 +183,7 @@ interface PoolNftInitParams {
 	poolNFT_version: number | '';
 	lockTime: string;
 	domain: string;
+	broadcastEnabled: boolean;
 }
 
 const DEFAULT_TBC_AMOUNT = '30';
@@ -206,6 +210,7 @@ const form = ref<PoolNftInitParams>({
 	poolNFT_version: DEFAULT_VERSION,
 	lockTime: '',
 	domain: '',
+	broadcastEnabled: true,
 });
 
 // 错误信息
@@ -240,6 +245,7 @@ const resetForm = async () => {
 		poolNFT_version: DEFAULT_VERSION,
 		lockTime: '',
 		domain: '',
+		broadcastEnabled: true,
 	};
 	// 清空错误信息
 	Object.keys(errors.value).forEach((key) => {
@@ -253,11 +259,11 @@ const resetForm = async () => {
 const validatePositiveNumber = (value: string | number | null | undefined, allowZero = false) => {
 	// 处理 null、undefined 或空值
 	if (value === null || value === undefined) return false;
-	
+
 	// 转换为字符串并去除空格
 	const strValue = String(value).trim();
 	if (!strValue) return false;
-	
+
 	// 转换为数字并验证
 	const num = Number(strValue);
 	if (Number.isNaN(num)) return false;
@@ -298,7 +304,6 @@ const validateForm = (): boolean => {
 	} else {
 		errors.value.ft_amount = '';
 	}
-
 
 	// lockTime
 	if (
@@ -371,15 +376,18 @@ const handleSubmit = async () => {
 			params[0].domain = form.value.domain.trim();
 		}
 
+		// broadcastEnabled：默认 true，仅在为 false 时显式下发
+		if (!form.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('POOLNFT_INIT Generated Data:', params);
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		// 仅在广播时记录历史
+		if (form.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_INIT', txid, response, params, walletInfo.value.curAddress);
 		}
 
@@ -446,7 +454,6 @@ watch(
 		}
 	},
 );
-
 
 watch(
 	() => form.value.lockTime,

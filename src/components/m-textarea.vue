@@ -118,7 +118,7 @@ const calculateHeight = () => {
 
 	// 步骤4：处理最大高度限制（仅当maxHeight为'数字px'时生效）
 	const currentMaxHeight =
-		typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight ?? 'none';
+		typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : (props.maxHeight ?? 'none');
 	if (currentMaxHeight !== 'none' && currentMaxHeight !== 'auto') {
 		// 提取maxHeight中的数字（如 '200px' → 200）
 		const heightMatch = currentMaxHeight.match(/^(\d+)px$/);
@@ -147,7 +147,7 @@ const handleCopy = async (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-	
+
 	if (!value.value || props.disabled) return;
 
 	try {
@@ -173,7 +173,7 @@ const handleDelete = (event: Event) => {
 	// 阻止事件冒泡，防止触发父级form的submit事件
 	event.preventDefault();
 	event.stopPropagation();
-	
+
 	if (props.disabled) return;
 
 	try {
@@ -230,7 +230,7 @@ onUnmounted(() => {
 	border: 1px solid var(--form-border-color);
 	border-radius: var(--radius-sm);
 	background-color: var(--form-item-bg-color);
-	overflow: visible;
+	overflow: hidden;
 }
 
 /* 操作按钮包装器 */
@@ -239,8 +239,8 @@ onUnmounted(() => {
 	flex-direction: column;
 	width: 100%;
 	background-color: var(--form-item-bg-color);
-	border-radius: 0 0 var(--radius-sm) var(--radius-sm); /* 只设置下方圆角，与容器匹配 */
-	overflow: hidden; /* 确保内部内容不会溢出圆角区域 */
+	/* 底部跟随外层圆角，避免看起来像把橙色边框的圆角“切掉” */
+	border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 /* 分割线样式 */
@@ -269,7 +269,8 @@ onUnmounted(() => {
 	padding: var(--spacing-xs);
 	padding-bottom: var(--spacing-xs);
 	border: none;
-	border-radius: var(--radius-sm) var(--radius-sm) 0 0; /* 默认只设置上方圆角（当有操作按钮时） */
+	/* 顶部跟随外层圆角，保证四角过渡自然 */
+	border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 	resize: none; /* 禁用手动调整大小 */
 	font-size: var(--font-size-subtitle);
 	line-height: 1.5;
@@ -280,14 +281,10 @@ onUnmounted(() => {
 	overflow-y: hidden; /* 默认隐藏滚动条 */
 }
 
-/* 当没有操作按钮时，textarea 作为最后一个子元素，设置完整圆角 */
-.m-textarea-container > .m-textarea:last-child {
-	border-radius: var(--radius-sm); /* 完整圆角 */
-}
-
 /* 容器聚焦样式：强化视觉反馈 */
 .m-textarea-container:focus-within {
 	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
 }
 
 /* 文本域聚焦样式 */
@@ -382,12 +379,12 @@ onUnmounted(() => {
 		padding: var(--spacing-xs);
 		gap: var(--spacing-xs);
 	}
-	
+
 	.m-textarea-btn {
 		padding: 6px 12px;
 		font-size: var(--font-size-small);
 	}
-	
+
 	.m-textarea {
 		font-size: var(--font-size-small);
 		min-height: 50px;
@@ -403,7 +400,7 @@ onUnmounted(() => {
 		flex-direction: row;
 		justify-content: flex-end;
 	}
-	
+
 	.m-textarea-btn {
 		padding: 6px 10px;
 		font-size: var(--font-size-tiny);
@@ -411,7 +408,7 @@ onUnmounted(() => {
 		min-width: auto;
 		flex-shrink: 0;
 	}
-	
+
 	.m-textarea {
 		font-size: var(--font-size-small);
 		min-height: 50px;

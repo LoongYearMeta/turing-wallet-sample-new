@@ -10,7 +10,7 @@
 				<span>View History</span>
 			</router-link>
 		</div>
-		
+
 		<!-- Function Toggle -->
 		<div class="function-toggle">
 			<button
@@ -97,12 +97,7 @@
 			<!-- decimal display (fixed at 6) -->
 			<div class="form-item">
 				<label>Decimal</label>
-				<input
-					type="text"
-					value="6 (Fixed)"
-					class="form-item-input-textarea"
-					readonly
-				/>
+				<input type="text" value="6 (Fixed)" class="form-item-input-textarea" readonly />
 			</div>
 			<!-- domain input -->
 			<div class="form-item">
@@ -156,7 +151,9 @@
 					</svg>
 					<span>FT-TRANSFER Form</span>
 				</div>
-				<p class="msg-form-description">Enter the contract address, amount, and recipient address to transfer FT tokens</p>
+				<p class="msg-form-description">
+					Enter the contract address, amount, and recipient address to transfer FT tokens
+				</p>
 			</div>
 			<!-- ft_contract_address input -->
 			<div class="form-item">
@@ -168,7 +165,9 @@
 					:copyable="true"
 					:deletable="true"
 				/>
-				<div v-if="errors.ft_contract_address" class="form-item-error">{{ errors.ft_contract_address }}</div>
+				<div v-if="errors.ft_contract_address" class="form-item-error">
+					{{ errors.ft_contract_address }}
+				</div>
 			</div>
 			<!-- ft_amount input -->
 			<div class="form-item">
@@ -205,6 +204,13 @@
 					:deletable="true"
 				/>
 				<div v-if="errors.address" class="form-item-error">{{ errors.address }}</div>
+			</div>
+			<!-- broadcastEnabled -->
+			<div class="form-item checkbox-item">
+				<label class="checkbox-label">
+					<input type="checkbox" v-model="transferForm.broadcastEnabled" />
+					<span>Enable Broadcast (`broadcastEnabled`)</span>
+				</label>
 			</div>
 			<!-- domain input -->
 			<!-- <div class="form-item">
@@ -306,6 +312,8 @@ const createDefaultTransferForm = () => ({
 	tbc_amount: '',
 	address: '',
 	domain: '',
+	// broadcastEnabled 默认 true，由表单控制
+	broadcastEnabled: true as boolean,
 });
 
 const transferForm = ref(createDefaultTransferForm());
@@ -353,20 +361,22 @@ const sendTransaction = async (params: any[]) => {
 	if (typeof window === 'undefined') {
 		throw new Error('window is not defined');
 	}
-	
+
 	// 使用 window.Turing.sendTransaction
 	if (window.Turing && typeof window.Turing.sendTransaction === 'function') {
 		return await window.Turing.sendTransaction(params);
 	}
-	
+
 	// 如果不存在，抛出错误
-	throw new Error('Turing.sendTransaction method not found. Please ensure window.Turing.sendTransaction is available');
+	throw new Error(
+		'Turing.sendTransaction method not found. Please ensure window.Turing.sendTransaction is available',
+	);
 };
 
 // MINT 表单验证
 const validateMintForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证 name
 	if (!mintForm.value.name || !mintForm.value.name.trim()) {
 		errors.value.name = 'Name is required';
@@ -380,7 +390,7 @@ const validateMintForm = (): boolean => {
 			errors.value.name = '';
 		}
 	}
-	
+
 	// 验证 symbol
 	if (!mintForm.value.symbol || !mintForm.value.symbol.trim()) {
 		errors.value.symbol = 'Symbol is required';
@@ -394,14 +404,15 @@ const validateMintForm = (): boolean => {
 			errors.value.symbol = '';
 		}
 	}
-	
+
 	// 验证 amount
 	const amountValue = mintForm.value.amount;
 	if (amountValue === null || amountValue === undefined || amountValue === '') {
 		errors.value.amount = 'Amount is required';
 		isValid = false;
 	} else {
-		const amountNum = typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
+		const amountNum =
+			typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
 		if (isNaN(amountNum) || amountNum <= 0) {
 			errors.value.amount = 'Amount must be a positive number';
 			isValid = false;
@@ -415,14 +426,14 @@ const validateMintForm = (): boolean => {
 			errors.value.amount = '';
 		}
 	}
-	
+
 	return isValid;
 };
 
 // TRANSFER 表单验证
 const validateTransferForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证 ft_contract_address
 	if (!transferForm.value.ft_contract_address || !transferForm.value.ft_contract_address.trim()) {
 		errors.value.ft_contract_address = 'FT Contract Address is required';
@@ -430,7 +441,7 @@ const validateTransferForm = (): boolean => {
 	} else {
 		errors.value.ft_contract_address = '';
 	}
-	
+
 	// 验证 ft_amount
 	if (!transferForm.value.ft_amount || !transferForm.value.ft_amount.trim()) {
 		errors.value.ft_amount = 'FT Amount is required';
@@ -444,7 +455,7 @@ const validateTransferForm = (): boolean => {
 			errors.value.ft_amount = '';
 		}
 	}
-	
+
 	// 验证 tbc_amount (如果提供)
 	if (transferForm.value.tbc_amount && transferForm.value.tbc_amount.trim()) {
 		const tbcAmountNum = Number(transferForm.value.tbc_amount.trim());
@@ -457,7 +468,7 @@ const validateTransferForm = (): boolean => {
 	} else {
 		errors.value.tbc_amount = '';
 	}
-	
+
 	// 验证 address
 	if (!transferForm.value.address || !transferForm.value.address.trim()) {
 		errors.value.address = 'Recipient Address is required';
@@ -465,14 +476,18 @@ const validateTransferForm = (): boolean => {
 	} else {
 		errors.value.address = '';
 	}
-	
+
 	return isValid;
 };
 
 // MINT 表单验证状态
 const isMintFormValid = computed(() => {
 	const amountValue = mintForm.value.amount;
-	const hasValidAmount = amountValue !== null && amountValue !== undefined && amountValue !== '' && !isNaN(Number(amountValue));
+	const hasValidAmount =
+		amountValue !== null &&
+		amountValue !== undefined &&
+		amountValue !== '' &&
+		!isNaN(Number(amountValue));
 	return (
 		mintForm.value.name.trim() &&
 		mintForm.value.symbol.trim() &&
@@ -503,20 +518,21 @@ const handleMint = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建 ft_data 对象
 		const amountValue = mintForm.value.amount;
-		const amountNum = typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
+		const amountNum =
+			typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
 		const ft_data = {
 			name: mintForm.value.name.trim(),
 			symbol: mintForm.value.symbol.trim(),
 			amount: amountNum,
 			decimal: 6, // 固定为6
 		};
-		
+
 		// 构建提交参数，将 ft_data 格式化为 JSON 字符串
 		const params: any[] = [
 			{
@@ -524,28 +540,25 @@ const handleMint = async () => {
 				ft_data: JSON.stringify(ft_data),
 			},
 		];
-		
+
 		// 如果提供了 domain，添加到参数中
 		if (mintForm.value.domain && mintForm.value.domain.trim()) {
 			params[0].domain = mintForm.value.domain.trim();
 		}
-		
+
 		console.log('FT-MINT Generated Data:', params);
-		
+
 		// 调用 sendTransaction
 		const response = await sendTransaction(params);
-		
+
 		// 提取 txid
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
+
 		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('FT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-MINT transaction sent successfully', 3000);
@@ -567,9 +580,9 @@ const handleTransfer = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建提交参数
 		const params: any[] = [
@@ -580,40 +593,44 @@ const handleTransfer = async () => {
 				address: transferForm.value.address.trim(),
 			},
 		];
-		
+
 		// 如果提供了 tbc_amount，添加到参数中
 		if (transferForm.value.tbc_amount && transferForm.value.tbc_amount.trim()) {
 			params[0].tbc_amount = Number(transferForm.value.tbc_amount.trim());
 		}
-		
+
 		// 如果提供了 domain，添加到参数中
 		if (transferForm.value.domain && transferForm.value.domain.trim()) {
 			params[0].domain = transferForm.value.domain.trim();
 		}
-		
+
+		// broadcastEnabled：默认 true，仅在为 false 时显式下发
+		const broadcastEnabled = transferForm.value.broadcastEnabled !== false;
+		if (!broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('FT-TRANSFER Generated Data:', params);
-		
+
 		// 调用 sendTransaction
 		const response = await sendTransaction(params);
-		
-		// 提取 txid
+
+		// 提取 txid（仅在广播时有效）
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		// 仅在 broadcastEnabled 为 true 时记录历史
+		if (broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('FT_TRANSFER', txid, response, params, walletInfo.value.curAddress);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('FT-TRANSFER transaction sent successfully', 3000);
 		await resetTransferFormState();
 	} catch (error) {
 		console.error('FT-TRANSFER transaction error:', error);
-		const errorMsg = error instanceof Error ? error.message : 'Failed to send FT-TRANSFER transaction';
+		const errorMsg =
+			error instanceof Error ? error.message : 'Failed to send FT-TRANSFER transaction';
 		toastApi.showError(errorMsg, 3000);
 		sendResult.value = '';
 	} finally {
@@ -622,99 +639,121 @@ const handleTransfer = async () => {
 };
 
 // 实时验证 - MINT
-watch(() => mintForm.value.name, () => {
-	if (isMintResetting.value) return;
-	if (!mintForm.value.name || !mintForm.value.name.trim()) {
-		errors.value.name = 'Name is required';
-	} else {
-		const nameLength = mintForm.value.name.trim().length;
-		if (nameLength > 20) {
-			errors.value.name = 'Name must be 20 characters or less';
+watch(
+	() => mintForm.value.name,
+	() => {
+		if (isMintResetting.value) return;
+		if (!mintForm.value.name || !mintForm.value.name.trim()) {
+			errors.value.name = 'Name is required';
 		} else {
-			errors.value.name = '';
+			const nameLength = mintForm.value.name.trim().length;
+			if (nameLength > 20) {
+				errors.value.name = 'Name must be 20 characters or less';
+			} else {
+				errors.value.name = '';
+			}
 		}
-	}
-});
+	},
+);
 
-watch(() => mintForm.value.symbol, () => {
-	if (isMintResetting.value) return;
-	if (!mintForm.value.symbol || !mintForm.value.symbol.trim()) {
-		errors.value.symbol = 'Symbol is required';
-	} else {
-		const symbolLength = mintForm.value.symbol.trim().length;
-		if (symbolLength > 20) {
-			errors.value.symbol = 'Symbol must be 20 characters or less';
+watch(
+	() => mintForm.value.symbol,
+	() => {
+		if (isMintResetting.value) return;
+		if (!mintForm.value.symbol || !mintForm.value.symbol.trim()) {
+			errors.value.symbol = 'Symbol is required';
 		} else {
-			errors.value.symbol = '';
+			const symbolLength = mintForm.value.symbol.trim().length;
+			if (symbolLength > 20) {
+				errors.value.symbol = 'Symbol must be 20 characters or less';
+			} else {
+				errors.value.symbol = '';
+			}
 		}
-	}
-});
+	},
+);
 
-watch(() => mintForm.value.amount, () => {
-	if (isMintResetting.value) return;
-	const amountValue = mintForm.value.amount;
-	if (amountValue === null || amountValue === undefined || amountValue === '') {
-		errors.value.amount = 'Amount is required';
-	} else {
-		const amountNum = typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
-		if (isNaN(amountNum) || amountNum <= 0) {
-			errors.value.amount = 'Amount must be a positive number';
-		} else if (amountNum > 21000000) {
-			errors.value.amount = 'Amount must not exceed 21,000,000';
-		} else if (!Number.isInteger(amountNum)) {
-			errors.value.amount = 'Amount must be an integer';
+watch(
+	() => mintForm.value.amount,
+	() => {
+		if (isMintResetting.value) return;
+		const amountValue = mintForm.value.amount;
+		if (amountValue === null || amountValue === undefined || amountValue === '') {
+			errors.value.amount = 'Amount is required';
 		} else {
-			errors.value.amount = '';
+			const amountNum =
+				typeof amountValue === 'string' ? Number(amountValue.trim()) : Number(amountValue);
+			if (isNaN(amountNum) || amountNum <= 0) {
+				errors.value.amount = 'Amount must be a positive number';
+			} else if (amountNum > 21000000) {
+				errors.value.amount = 'Amount must not exceed 21,000,000';
+			} else if (!Number.isInteger(amountNum)) {
+				errors.value.amount = 'Amount must be an integer';
+			} else {
+				errors.value.amount = '';
+			}
 		}
-	}
-});
+	},
+);
 
 // 实时验证 - TRANSFER
-watch(() => transferForm.value.ft_contract_address, () => {
-	if (isTransferResetting.value) return;
-	if (!transferForm.value.ft_contract_address || !transferForm.value.ft_contract_address.trim()) {
-		errors.value.ft_contract_address = 'FT Contract Address is required';
-	} else {
-		errors.value.ft_contract_address = '';
-	}
-});
-
-watch(() => transferForm.value.ft_amount, () => {
-	if (isTransferResetting.value) return;
-	if (!transferForm.value.ft_amount || !transferForm.value.ft_amount.trim()) {
-		errors.value.ft_amount = 'FT Amount is required';
-	} else {
-		const ftAmountNum = Number(transferForm.value.ft_amount.trim());
-		if (isNaN(ftAmountNum) || ftAmountNum <= 0) {
-			errors.value.ft_amount = 'FT Amount must be a positive number';
+watch(
+	() => transferForm.value.ft_contract_address,
+	() => {
+		if (isTransferResetting.value) return;
+		if (!transferForm.value.ft_contract_address || !transferForm.value.ft_contract_address.trim()) {
+			errors.value.ft_contract_address = 'FT Contract Address is required';
 		} else {
-			errors.value.ft_amount = '';
+			errors.value.ft_contract_address = '';
 		}
-	}
-});
+	},
+);
 
-watch(() => transferForm.value.tbc_amount, () => {
-	if (isTransferResetting.value) return;
-	if (transferForm.value.tbc_amount && transferForm.value.tbc_amount.trim()) {
-		const tbcAmountNum = Number(transferForm.value.tbc_amount.trim());
-		if (isNaN(tbcAmountNum) || tbcAmountNum <= 0) {
-			errors.value.tbc_amount = 'TBC Amount must be a positive number';
+watch(
+	() => transferForm.value.ft_amount,
+	() => {
+		if (isTransferResetting.value) return;
+		if (!transferForm.value.ft_amount || !transferForm.value.ft_amount.trim()) {
+			errors.value.ft_amount = 'FT Amount is required';
+		} else {
+			const ftAmountNum = Number(transferForm.value.ft_amount.trim());
+			if (isNaN(ftAmountNum) || ftAmountNum <= 0) {
+				errors.value.ft_amount = 'FT Amount must be a positive number';
+			} else {
+				errors.value.ft_amount = '';
+			}
+		}
+	},
+);
+
+watch(
+	() => transferForm.value.tbc_amount,
+	() => {
+		if (isTransferResetting.value) return;
+		if (transferForm.value.tbc_amount && transferForm.value.tbc_amount.trim()) {
+			const tbcAmountNum = Number(transferForm.value.tbc_amount.trim());
+			if (isNaN(tbcAmountNum) || tbcAmountNum <= 0) {
+				errors.value.tbc_amount = 'TBC Amount must be a positive number';
+			} else {
+				errors.value.tbc_amount = '';
+			}
 		} else {
 			errors.value.tbc_amount = '';
 		}
-	} else {
-		errors.value.tbc_amount = '';
-	}
-});
+	},
+);
 
-watch(() => transferForm.value.address, () => {
-	if (isTransferResetting.value) return;
-	if (!transferForm.value.address || !transferForm.value.address.trim()) {
-		errors.value.address = 'Recipient Address is required';
-	} else {
-		errors.value.address = '';
-	}
-});
+watch(
+	() => transferForm.value.address,
+	() => {
+		if (isTransferResetting.value) return;
+		if (!transferForm.value.address || !transferForm.value.address.trim()) {
+			errors.value.address = 'Recipient Address is required';
+		} else {
+			errors.value.address = '';
+		}
+	},
+);
 
 // 切换功能时清空结果
 watch(currentFunction, () => {

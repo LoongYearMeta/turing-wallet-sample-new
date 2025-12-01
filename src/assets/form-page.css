@@ -198,6 +198,26 @@
 	color: var(--color-text-secondary);
 }
 
+.checkbox-item {
+	display: flex;
+	align-items: center;
+}
+
+.checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	font-size: var(--font-size-subtitle);
+	color: var(--color-text-secondary);
+}
+
+.checkbox-label input[type='checkbox'] {
+	width: 16px;
+	height: 16px;
+	accent-color: var(--color-primary);
+	cursor: pointer;
+}
+
 /* cards styles */
 .form-item-cards {
 	display: flex;

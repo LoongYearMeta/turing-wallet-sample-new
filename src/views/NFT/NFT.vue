@@ -4,13 +4,15 @@
 		<div class="page-header">
 			<div>
 				<h2 class="page-title">NFT Transaction</h2>
-				<p class="page-description">Create collection, create NFT, or transfer NFT using the form below.</p>
+				<p class="page-description">
+					Create collection, create NFT, or transfer NFT using the form below.
+				</p>
 			</div>
 			<router-link to="/records" class="history-link">
 				<span>View History</span>
 			</router-link>
 		</div>
-		
+
 		<!-- Function Toggle -->
 		<div class="function-toggle">
 			<button
@@ -40,7 +42,11 @@
 		</div>
 
 		<!-- COLLECTION_CREATE Form -->
-		<form v-if="currentFunction === 'COLLECTION_CREATE'" class="msg-form" @submit.prevent="handleCollectionCreate">
+		<form
+			v-if="currentFunction === 'COLLECTION_CREATE'"
+			class="msg-form"
+			@submit.prevent="handleCollectionCreate"
+		>
 			<!-- form header -->
 			<div class="msg-form-header">
 				<div class="msg-form-title">
@@ -129,6 +135,13 @@
 					:deletable="true"
 				/>
 			</div>
+			<!-- broadcastEnabled -->
+			<div class="form-item checkbox-item">
+				<label class="checkbox-label">
+					<input type="checkbox" v-model="collectionForm.broadcastEnabled" />
+					<span>Enable Broadcast (`broadcastEnabled`)</span>
+				</label>
+			</div>
 			<div class="form-item-btn-container">
 				<button
 					class="form-button-submit"
@@ -143,7 +156,11 @@
 		</form>
 
 		<!-- NFT_CREATE Form -->
-		<form v-if="currentFunction === 'NFT_CREATE'" class="msg-form" @submit.prevent="handleNftCreate">
+		<form
+			v-if="currentFunction === 'NFT_CREATE'"
+			class="msg-form"
+			@submit.prevent="handleNftCreate"
+		>
 			<!-- form header -->
 			<div class="msg-form-header">
 				<div class="msg-form-title">
@@ -170,7 +187,9 @@
 					</svg>
 					<span>NFT_CREATE Form</span>
 				</div>
-				<p class="msg-form-description">Enter the NFT information and collection ID to create a new NFT</p>
+				<p class="msg-form-description">
+					Enter the NFT information and collection ID to create a new NFT
+				</p>
 			</div>
 			<!-- nftName input -->
 			<div class="form-item">
@@ -233,6 +252,13 @@
 					:deletable="true"
 				/>
 			</div>
+			<!-- broadcastEnabled -->
+			<div class="form-item checkbox-item">
+				<label class="checkbox-label">
+					<input type="checkbox" v-model="nftCreateForm.broadcastEnabled" />
+					<span>Enable Broadcast (`broadcastEnabled`)</span>
+				</label>
+			</div>
 			<div class="form-item-btn-container">
 				<button
 					class="form-button-submit"
@@ -247,7 +273,11 @@
 		</form>
 
 		<!-- NFT_TRANSFER Form -->
-		<form v-if="currentFunction === 'NFT_TRANSFER'" class="msg-form" @submit.prevent="handleNftTransfer">
+		<form
+			v-if="currentFunction === 'NFT_TRANSFER'"
+			class="msg-form"
+			@submit.prevent="handleNftTransfer"
+		>
 			<!-- form header -->
 			<div class="msg-form-header">
 				<div class="msg-form-title">
@@ -274,7 +304,9 @@
 					</svg>
 					<span>NFT_TRANSFER Form</span>
 				</div>
-				<p class="msg-form-description">Enter the NFT contract address and recipient address to transfer NFT</p>
+				<p class="msg-form-description">
+					Enter the NFT contract address and recipient address to transfer NFT
+				</p>
 			</div>
 			<!-- nft_contract_address input -->
 			<div class="form-item">
@@ -286,7 +318,9 @@
 					:copyable="true"
 					:deletable="true"
 				/>
-				<div v-if="errors.nft_contract_address" class="form-item-error">{{ errors.nft_contract_address }}</div>
+				<div v-if="errors.nft_contract_address" class="form-item-error">
+					{{ errors.nft_contract_address }}
+				</div>
 			</div>
 			<!-- address input -->
 			<div class="form-item">
@@ -310,6 +344,13 @@
 					:copyable="true"
 					:deletable="true"
 				/>
+			</div>
+			<!-- broadcastEnabled -->
+			<div class="form-item checkbox-item">
+				<label class="checkbox-label">
+					<input type="checkbox" v-model="nftTransferForm.broadcastEnabled" />
+					<span>Enable Broadcast (`broadcastEnabled`)</span>
+				</label>
 			</div>
 			<div class="form-item-btn-container">
 				<button
@@ -375,7 +416,9 @@ const { getWalletInfo } = walletStore;
 const toastApi = useToast();
 
 // 当前功能类型
-const currentFunction = ref<'COLLECTION_CREATE' | 'NFT_CREATE' | 'NFT_TRANSFER'>('COLLECTION_CREATE');
+const currentFunction = ref<'COLLECTION_CREATE' | 'NFT_CREATE' | 'NFT_TRANSFER'>(
+	'COLLECTION_CREATE',
+);
 
 // 提交状态
 const isSubmitting = ref(false);
@@ -387,6 +430,8 @@ const createDefaultCollectionForm = () => ({
 	supply: '',
 	file: '',
 	domain: '',
+	// broadcastEnabled 默认 true
+	broadcastEnabled: true as boolean,
 });
 
 const collectionForm = ref(createDefaultCollectionForm());
@@ -400,6 +445,8 @@ const createDefaultNftCreateForm = () => ({
 	attributes: '',
 	collection_id: '',
 	domain: '',
+	// broadcastEnabled 默认 true
+	broadcastEnabled: true as boolean,
 });
 
 const nftCreateForm = ref(createDefaultNftCreateForm());
@@ -409,6 +456,8 @@ const createDefaultNftTransferForm = () => ({
 	nft_contract_address: '',
 	address: '',
 	domain: '',
+	// broadcastEnabled 默认 true
+	broadcastEnabled: true as boolean,
 });
 
 const nftTransferForm = ref(createDefaultNftTransferForm());
@@ -480,21 +529,23 @@ const sendTransaction = async (params: any[]) => {
 	if (typeof window === 'undefined') {
 		throw new Error('window is not defined');
 	}
-	
+
 	// 使用 window.Turing.sendTransaction
 	if (window.Turing && typeof window.Turing.sendTransaction === 'function') {
 		return await window.Turing.sendTransaction(params);
 	}
-	
+
 	// 如果不存在，抛出错误
-	throw new Error('Turing.sendTransaction method not found. Please ensure window.Turing.sendTransaction is available');
+	throw new Error(
+		'Turing.sendTransaction method not found. Please ensure window.Turing.sendTransaction is available',
+	);
 };
 
 // 文件上传处理
 const handleFileChange = (event: Event) => {
 	const target = event.target as HTMLInputElement;
 	const file = target.files?.[0];
-	
+
 	if (!file) {
 		filePreview.value = '';
 		fileName.value = '';
@@ -502,7 +553,7 @@ const handleFileChange = (event: Event) => {
 		errors.value.file = '';
 		return;
 	}
-	
+
 	// 验证文件类型
 	if (!file.type.startsWith('image/')) {
 		errors.value.file = 'Please select an image file';
@@ -511,7 +562,7 @@ const handleFileChange = (event: Event) => {
 		collectionForm.value.file = '';
 		return;
 	}
-	
+
 	// 验证文件大小 (限制为 5MB)
 	const maxSize = 5 * 1024 * 1024; // 5MB
 	if (file.size > maxSize) {
@@ -521,10 +572,10 @@ const handleFileChange = (event: Event) => {
 		collectionForm.value.file = '';
 		return;
 	}
-	
+
 	fileName.value = file.name;
 	errors.value.file = '';
-	
+
 	// 读取文件并转换为 base64
 	const reader = new FileReader();
 	reader.onload = (e) => {
@@ -547,7 +598,7 @@ const handleFileChange = (event: Event) => {
 const handleNftFileChange = (event: Event) => {
 	const target = event.target as HTMLInputElement;
 	const file = target.files?.[0];
-	
+
 	if (!file) {
 		nftFilePreview.value = '';
 		nftFileName.value = '';
@@ -555,7 +606,7 @@ const handleNftFileChange = (event: Event) => {
 		errors.value.file = '';
 		return;
 	}
-	
+
 	// 验证文件类型
 	if (!file.type.startsWith('image/')) {
 		errors.value.file = 'Please select an image file';
@@ -564,7 +615,7 @@ const handleNftFileChange = (event: Event) => {
 		nftCreateForm.value.file = '';
 		return;
 	}
-	
+
 	// 验证文件大小 (限制为 5MB)
 	const maxSize = 5 * 1024 * 1024; // 5MB
 	if (file.size > maxSize) {
@@ -574,10 +625,10 @@ const handleNftFileChange = (event: Event) => {
 		nftCreateForm.value.file = '';
 		return;
 	}
-	
+
 	nftFileName.value = file.name;
 	errors.value.file = '';
-	
+
 	// 读取文件并转换为 base64
 	const reader = new FileReader();
 	reader.onload = (e) => {
@@ -599,7 +650,7 @@ const handleNftFileChange = (event: Event) => {
 // COLLECTION_CREATE 表单验证
 const validateCollectionForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证 collectionName
 	if (!collectionForm.value.collectionName || !collectionForm.value.collectionName.trim()) {
 		errors.value.collectionName = 'Collection Name is required';
@@ -607,7 +658,7 @@ const validateCollectionForm = (): boolean => {
 	} else {
 		errors.value.collectionName = '';
 	}
-	
+
 	// 验证 description
 	if (!collectionForm.value.description || !collectionForm.value.description.trim()) {
 		errors.value.description = 'Description is required';
@@ -615,14 +666,15 @@ const validateCollectionForm = (): boolean => {
 	} else {
 		errors.value.description = '';
 	}
-	
+
 	// 验证 supply
 	const supplyValue = collectionForm.value.supply;
 	if (supplyValue === null || supplyValue === undefined || supplyValue === '') {
 		errors.value.supply = 'Supply is required';
 		isValid = false;
 	} else {
-		const supplyNum = typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
+		const supplyNum =
+			typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
 		if (isNaN(supplyNum) || supplyNum <= 0) {
 			errors.value.supply = 'Supply must be a positive number';
 			isValid = false;
@@ -633,7 +685,7 @@ const validateCollectionForm = (): boolean => {
 			errors.value.supply = '';
 		}
 	}
-	
+
 	// 验证 file
 	if (!collectionForm.value.file || !collectionForm.value.file.trim()) {
 		errors.value.file = 'File is required';
@@ -641,14 +693,14 @@ const validateCollectionForm = (): boolean => {
 	} else {
 		errors.value.file = '';
 	}
-	
+
 	return isValid;
 };
 
 // NFT_CREATE 表单验证
 const validateNftCreateForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证 name
 	if (!nftCreateForm.value.name || !nftCreateForm.value.name.trim()) {
 		errors.value.name = 'NFT Name is required';
@@ -656,7 +708,7 @@ const validateNftCreateForm = (): boolean => {
 	} else {
 		errors.value.name = '';
 	}
-	
+
 	// 验证 description
 	if (!nftCreateForm.value.description || !nftCreateForm.value.description.trim()) {
 		errors.value.description = 'Description is required';
@@ -664,7 +716,7 @@ const validateNftCreateForm = (): boolean => {
 	} else {
 		errors.value.description = '';
 	}
-	
+
 	// 验证 file
 	if (!nftCreateForm.value.file || !nftCreateForm.value.file.trim()) {
 		errors.value.file = 'File is required';
@@ -672,7 +724,7 @@ const validateNftCreateForm = (): boolean => {
 	} else {
 		errors.value.file = '';
 	}
-	
+
 	// 验证 collection_id
 	if (!nftCreateForm.value.collection_id || !nftCreateForm.value.collection_id.trim()) {
 		errors.value.collection_id = 'Collection ID is required';
@@ -680,22 +732,25 @@ const validateNftCreateForm = (): boolean => {
 	} else {
 		errors.value.collection_id = '';
 	}
-	
+
 	return isValid;
 };
 
 // NFT_TRANSFER 表单验证
 const validateNftTransferForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证 nft_contract_address
-	if (!nftTransferForm.value.nft_contract_address || !nftTransferForm.value.nft_contract_address.trim()) {
+	if (
+		!nftTransferForm.value.nft_contract_address ||
+		!nftTransferForm.value.nft_contract_address.trim()
+	) {
 		errors.value.nft_contract_address = 'NFT Contract Address is required';
 		isValid = false;
 	} else {
 		errors.value.nft_contract_address = '';
 	}
-	
+
 	// 验证 address
 	if (!nftTransferForm.value.address || !nftTransferForm.value.address.trim()) {
 		errors.value.address = 'Recipient Address is required';
@@ -703,14 +758,18 @@ const validateNftTransferForm = (): boolean => {
 	} else {
 		errors.value.address = '';
 	}
-	
+
 	return isValid;
 };
 
 // COLLECTION_CREATE 表单验证状态
 const isCollectionFormValid = computed(() => {
 	const supplyValue = collectionForm.value.supply;
-	const hasValidSupply = supplyValue !== null && supplyValue !== undefined && supplyValue !== '' && !isNaN(Number(supplyValue));
+	const hasValidSupply =
+		supplyValue !== null &&
+		supplyValue !== undefined &&
+		supplyValue !== '' &&
+		!isNaN(Number(supplyValue));
 	return (
 		collectionForm.value.collectionName.trim() &&
 		collectionForm.value.description.trim() &&
@@ -754,20 +813,21 @@ const handleCollectionCreate = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建 collection_data 对象
 		const supplyValue = collectionForm.value.supply;
-		const supplyNum = typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
+		const supplyNum =
+			typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
 		const collection_data = {
 			collectionName: collectionForm.value.collectionName.trim(),
 			description: collectionForm.value.description.trim(),
 			supply: supplyNum,
 			file: collectionForm.value.file.trim(),
 		};
-		
+
 		// 构建提交参数，将 collection_data 格式化为 JSON 字符串
 		const params: any[] = [
 			{
@@ -775,35 +835,44 @@ const handleCollectionCreate = async () => {
 				collection_data: JSON.stringify(collection_data),
 			},
 		];
-		
+
 		// 如果提供了 domain，添加到参数中
 		if (collectionForm.value.domain && collectionForm.value.domain.trim()) {
 			params[0].domain = collectionForm.value.domain.trim();
 		}
-		
+
+		// broadcastEnabled：默认 true，仅在为 false 时显式下发
+		if (!collectionForm.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('COLLECTION_CREATE Generated Data:', params);
-		
+
 		// 调用 sendTransaction
 		const response = await sendTransaction(params);
-		
-		// 提取 txid
+
+		// 提取 txid（仅在广播时有效）
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
-			addTransactionHistory('COLLECTION_CREATE', txid, response, params, walletInfo.value.curAddress);
+
+		// 仅在 broadcastEnabled 为 true 时记录历史
+		if (collectionForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
+			addTransactionHistory(
+				'COLLECTION_CREATE',
+				txid,
+				response,
+				params,
+				walletInfo.value.curAddress,
+			);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('COLLECTION_CREATE transaction sent successfully', 3000);
 		await resetCollectionForm();
 	} catch (error) {
 		console.error('COLLECTION_CREATE transaction error:', error);
-		const errorMsg = error instanceof Error ? error.message : 'Failed to send COLLECTION_CREATE transaction';
+		const errorMsg =
+			error instanceof Error ? error.message : 'Failed to send COLLECTION_CREATE transaction';
 		toastApi.showError(errorMsg, 3000);
 		sendResult.value = '';
 	} finally {
@@ -818,9 +887,9 @@ const handleNftCreate = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建 nftData 对象
 		const nftData: any = {
@@ -830,7 +899,7 @@ const handleNftCreate = async () => {
 			symbol: nftCreateForm.value.name.trim(),
 			attributes: nftCreateForm.value.name.trim(),
 		};
-		
+
 		// 构建提交参数，将 nftData 格式化为 JSON 字符串
 		const params: any[] = [
 			{
@@ -839,35 +908,35 @@ const handleNftCreate = async () => {
 				collection_id: nftCreateForm.value.collection_id.trim(),
 			},
 		];
-		
+
 		// 如果提供了 domain，添加到参数中
 		if (nftCreateForm.value.domain && nftCreateForm.value.domain.trim()) {
 			params[0].domain = nftCreateForm.value.domain.trim();
 		}
-		
+
+		if (!nftCreateForm.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('NFT_CREATE Generated Data:', params);
-		
+
 		// 调用 sendTransaction
 		const response = await sendTransaction(params);
-		
-		// 提取 txid
+
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (nftCreateForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_CREATE transaction sent successfully', 3000);
 		await resetNftCreateForm();
 	} catch (error) {
 		console.error('NFT_CREATE transaction error:', error);
-		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_CREATE transaction';
+		const errorMsg =
+			error instanceof Error ? error.message : 'Failed to send NFT_CREATE transaction';
 		toastApi.showError(errorMsg, 3000);
 		sendResult.value = '';
 	} finally {
@@ -882,9 +951,9 @@ const handleNftTransfer = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建提交参数
 		const params: any[] = [
@@ -894,35 +963,35 @@ const handleNftTransfer = async () => {
 				address: nftTransferForm.value.address.trim(),
 			},
 		];
-		
+
 		// 如果提供了 domain，添加到参数中
 		if (nftTransferForm.value.domain && nftTransferForm.value.domain.trim()) {
 			params[0].domain = nftTransferForm.value.domain.trim();
 		}
-		
+
+		if (!nftTransferForm.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('NFT_TRANSFER Generated Data:', params);
-		
+
 		// 调用 sendTransaction
 		const response = await sendTransaction(params);
-		
-		// 提取 txid
+
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (nftTransferForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('NFT_TRANSFER', txid, response, params, walletInfo.value.curAddress);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('NFT_TRANSFER transaction sent successfully', 3000);
 		await resetNftTransferForm();
 	} catch (error) {
 		console.error('NFT_TRANSFER transaction error:', error);
-		const errorMsg = error instanceof Error ? error.message : 'Failed to send NFT_TRANSFER transaction';
+		const errorMsg =
+			error instanceof Error ? error.message : 'Failed to send NFT_TRANSFER transaction';
 		toastApi.showError(errorMsg, 3000);
 		sendResult.value = '';
 	} finally {
@@ -931,87 +1000,115 @@ const handleNftTransfer = async () => {
 };
 
 // 实时验证 - COLLECTION_CREATE
-watch(() => collectionForm.value.collectionName, () => {
-	if (isCollectionResetting.value) return;
-	if (!collectionForm.value.collectionName || !collectionForm.value.collectionName.trim()) {
-		errors.value.collectionName = 'Collection Name is required';
-	} else {
-		errors.value.collectionName = '';
-	}
-});
-
-watch(() => collectionForm.value.description, () => {
-	if (isCollectionResetting.value) return;
-	if (!collectionForm.value.description || !collectionForm.value.description.trim()) {
-		errors.value.description = 'Description is required';
-	} else {
-		errors.value.description = '';
-	}
-});
-
-watch(() => collectionForm.value.supply, () => {
-	if (isCollectionResetting.value) return;
-	const supplyValue = collectionForm.value.supply;
-	if (supplyValue === null || supplyValue === undefined || supplyValue === '') {
-		errors.value.supply = 'Supply is required';
-	} else {
-		const supplyNum = typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
-		if (isNaN(supplyNum) || supplyNum <= 0) {
-			errors.value.supply = 'Supply must be a positive number';
-		} else if (!Number.isInteger(supplyNum)) {
-			errors.value.supply = 'Supply must be an integer';
+watch(
+	() => collectionForm.value.collectionName,
+	() => {
+		if (isCollectionResetting.value) return;
+		if (!collectionForm.value.collectionName || !collectionForm.value.collectionName.trim()) {
+			errors.value.collectionName = 'Collection Name is required';
 		} else {
-			errors.value.supply = '';
+			errors.value.collectionName = '';
 		}
-	}
-});
+	},
+);
+
+watch(
+	() => collectionForm.value.description,
+	() => {
+		if (isCollectionResetting.value) return;
+		if (!collectionForm.value.description || !collectionForm.value.description.trim()) {
+			errors.value.description = 'Description is required';
+		} else {
+			errors.value.description = '';
+		}
+	},
+);
+
+watch(
+	() => collectionForm.value.supply,
+	() => {
+		if (isCollectionResetting.value) return;
+		const supplyValue = collectionForm.value.supply;
+		if (supplyValue === null || supplyValue === undefined || supplyValue === '') {
+			errors.value.supply = 'Supply is required';
+		} else {
+			const supplyNum =
+				typeof supplyValue === 'string' ? Number(supplyValue.trim()) : Number(supplyValue);
+			if (isNaN(supplyNum) || supplyNum <= 0) {
+				errors.value.supply = 'Supply must be a positive number';
+			} else if (!Number.isInteger(supplyNum)) {
+				errors.value.supply = 'Supply must be an integer';
+			} else {
+				errors.value.supply = '';
+			}
+		}
+	},
+);
 
 // 实时验证 - NFT_CREATE
-watch(() => nftCreateForm.value.name, () => {
-	if (isNftCreateResetting.value) return;
-	if (!nftCreateForm.value.name || !nftCreateForm.value.name.trim()) {
-		errors.value.name = 'NFT Name is required';
-	} else {
-		errors.value.name = '';
-	}
-});
+watch(
+	() => nftCreateForm.value.name,
+	() => {
+		if (isNftCreateResetting.value) return;
+		if (!nftCreateForm.value.name || !nftCreateForm.value.name.trim()) {
+			errors.value.name = 'NFT Name is required';
+		} else {
+			errors.value.name = '';
+		}
+	},
+);
 
-watch(() => nftCreateForm.value.description, () => {
-	if (isNftCreateResetting.value) return;
-	if (!nftCreateForm.value.description || !nftCreateForm.value.description.trim()) {
-		errors.value.description = 'Description is required';
-	} else {
-		errors.value.description = '';
-	}
-});
+watch(
+	() => nftCreateForm.value.description,
+	() => {
+		if (isNftCreateResetting.value) return;
+		if (!nftCreateForm.value.description || !nftCreateForm.value.description.trim()) {
+			errors.value.description = 'Description is required';
+		} else {
+			errors.value.description = '';
+		}
+	},
+);
 
-watch(() => nftCreateForm.value.collection_id, () => {
-	if (isNftCreateResetting.value) return;
-	if (!nftCreateForm.value.collection_id || !nftCreateForm.value.collection_id.trim()) {
-		errors.value.collection_id = 'Collection ID is required';
-	} else {
-		errors.value.collection_id = '';
-	}
-});
+watch(
+	() => nftCreateForm.value.collection_id,
+	() => {
+		if (isNftCreateResetting.value) return;
+		if (!nftCreateForm.value.collection_id || !nftCreateForm.value.collection_id.trim()) {
+			errors.value.collection_id = 'Collection ID is required';
+		} else {
+			errors.value.collection_id = '';
+		}
+	},
+);
 
 // 实时验证 - NFT_TRANSFER
-watch(() => nftTransferForm.value.nft_contract_address, () => {
-	if (isNftTransferResetting.value) return;
-	if (!nftTransferForm.value.nft_contract_address || !nftTransferForm.value.nft_contract_address.trim()) {
-		errors.value.nft_contract_address = 'NFT Contract Address is required';
-	} else {
-		errors.value.nft_contract_address = '';
-	}
-});
+watch(
+	() => nftTransferForm.value.nft_contract_address,
+	() => {
+		if (isNftTransferResetting.value) return;
+		if (
+			!nftTransferForm.value.nft_contract_address ||
+			!nftTransferForm.value.nft_contract_address.trim()
+		) {
+			errors.value.nft_contract_address = 'NFT Contract Address is required';
+		} else {
+			errors.value.nft_contract_address = '';
+		}
+	},
+);
 
-watch(() => nftTransferForm.value.address, () => {
-	if (isNftTransferResetting.value) return;
-	if (!nftTransferForm.value.address || !nftTransferForm.value.address.trim()) {
-		errors.value.address = 'Recipient Address is required';
-	} else {
-		errors.value.address = '';
-	}
-});
+watch(
+	() => nftTransferForm.value.address,
+	() => {
+		if (isNftTransferResetting.value) return;
+		if (!nftTransferForm.value.address || !nftTransferForm.value.address.trim()) {
+			errors.value.address = 'Recipient Address is required';
+		} else {
+			errors.value.address = '';
+		}
+	},
+);
 
 // 切换功能时清空结果
 watch(currentFunction, () => {
@@ -1197,7 +1294,7 @@ onMounted(async () => {
 		-webkit-overflow-scrolling: touch;
 		scroll-snap-type: x proximity;
 	}
-	
+
 	.toggle-btn {
 		flex: 1;
 		padding: var(--spacing-xs) var(--spacing-sm);
@@ -1205,21 +1302,21 @@ onMounted(async () => {
 		font-weight: 500;
 		scroll-snap-align: start;
 	}
-	
+
 	.toggle-btn-text-full {
 		display: none;
 	}
-	
+
 	.toggle-btn-text-short {
 		display: inline;
 	}
-	
+
 	.page-header {
 		flex-direction: column;
 		gap: var(--spacing-sm);
 		align-items: flex-start;
 	}
-	
+
 	.history-link {
 		width: 100%;
 		justify-content: center;
@@ -1231,7 +1328,7 @@ onMounted(async () => {
 		gap: 4px;
 		padding: 4px;
 	}
-	
+
 	.toggle-btn {
 		flex: 1;
 		padding: 8px 6px;
@@ -1240,11 +1337,11 @@ onMounted(async () => {
 		letter-spacing: -0.2px;
 		min-width: 0;
 	}
-	
+
 	.page-title {
 		font-size: 1.5rem;
 	}
-	
+
 	.page-description {
 		font-size: var(--font-size-small);
 	}

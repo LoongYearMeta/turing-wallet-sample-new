@@ -4,7 +4,9 @@
 		<div class="page-header">
 			<div>
 				<h2 class="page-title">Send P2PKH Transaction</h2>
-				<p class="page-description">Please enter the recipient address and amount you want to send.</p>
+				<p class="page-description">
+					Please enter the recipient address and amount you want to send.
+				</p>
 			</div>
 			<router-link to="/records" class="history-link">
 				<span>View History</span>
@@ -63,6 +65,13 @@
 					:deletable="true"
 				/>
 				<div v-if="errors.satoshis" class="form-item-error">{{ errors.satoshis }}</div>
+			</div>
+			<!-- broadcastEnabled -->
+			<div class="form-item checkbox-item">
+				<label class="checkbox-label">
+					<input type="checkbox" v-model="broadcastEnabled" />
+					<span>Enable Broadcast (`broadcastEnabled`)</span>
+				</label>
 			</div>
 			<div class="form-item-btn-container">
 				<button
@@ -132,6 +141,8 @@ const isSubmitting = ref(false);
 // 表单数据
 const address = ref('');
 const satoshis = ref('');
+// broadcastEnabled 控制是否由钱包广播，默认 true
+const broadcastEnabled = ref<boolean>(true);
 
 // 表单错误信息
 const errors = ref({
@@ -157,7 +168,7 @@ const resetForm = async () => {
 // 表单验证
 const validateForm = (): boolean => {
 	let isValid = true;
-	
+
 	// 验证地址
 	if (!address.value || !address.value.trim()) {
 		errors.value.address = 'Address is required';
@@ -165,7 +176,7 @@ const validateForm = (): boolean => {
 	} else {
 		errors.value.address = '';
 	}
-	
+
 	// 验证 satoshis
 	if (!satoshis.value || !satoshis.value.trim()) {
 		errors.value.satoshis = 'Satoshis is required';
@@ -179,34 +190,40 @@ const validateForm = (): boolean => {
 			errors.value.satoshis = '';
 		}
 	}
-	
+
 	return isValid;
 };
 
 // 表单验证状态
 const isFormValid = computed(() => {
-	return address.value.trim() && satoshis.value.trim() && !errors.value.address && !errors.value.satoshis;
+	return (
+		address.value.trim() && satoshis.value.trim() && !errors.value.address && !errors.value.satoshis
+	);
 });
 
 // walletSendTransaction 函数
 // 支持全局函数、window.Turing.sendTransaction 或 window.walletSendTransaction
-const walletSendTransaction = async (result: { flag: string; [key: string]: string | number }[]) => {
+const walletSendTransaction = async (
+	result: { flag: string; [key: string]: string | number }[],
+) => {
 	if (typeof window === 'undefined') {
 		throw new Error('window is not defined');
 	}
-	
+
 	// 优先使用全局 walletSendTransaction 函数
 	if (typeof (window as any).walletSendTransaction === 'function') {
 		return await (window as any).walletSendTransaction(result);
 	}
-	
+
 	// 其次使用 window.Turing.sendTransaction
 	if (window.Turing && typeof (window.Turing as any).sendTransaction === 'function') {
 		return await (window.Turing as any).sendTransaction(result);
 	}
-	
+
 	// 如果都不存在，抛出错误
-	throw new Error('walletSendTransaction method not found. Please ensure walletSendTransaction is available globally or as window.Turing.sendTransaction');
+	throw new Error(
+		'walletSendTransaction method not found. Please ensure walletSendTransaction is available globally or as window.Turing.sendTransaction',
+	);
 };
 
 // 处理 P2PKH 发送
@@ -216,35 +233,37 @@ const handleSendP2PKH = async () => {
 		toastApi.showError('Please fix the form errors first', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 构建提交参数，格式：{ flag: string; [key: string]: string | number }[]
-		const result: { flag: string; [key: string]: string | number }[] = [
+		const result: { flag: string; [key: string]: string | number | boolean }[] = [
 			{
 				flag: 'P2PKH',
 				address: address.value.trim(),
 				satoshis: Number(satoshis.value.trim()),
 			},
 		];
-		
+
+		// broadcastEnabled：默认 true，仅在为 false 时显式下发
+		if (!broadcastEnabled.value) {
+			result[0].broadcastEnabled = false;
+		}
+
 		console.log('Generated Data:', result);
-		
+
 		// 调用 walletSendTransaction
 		const response = await walletSendTransaction(result);
-		
-		// 提取 txid
+
+		// 提取 txid（仅在广播时有效）
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !result[0] || (result[0] as any).broadcastEnabled !== false;
-		
-		// 记录历史
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		// 仅在 broadcastEnabled 为 true 时记录历史
+		if (broadcastEnabled.value && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('P2PKH', txid, response, result, walletInfo.value.curAddress);
 		}
-		
+
 		// 格式化返回结果并显示
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('P2PKH transaction sent successfully', 3000);

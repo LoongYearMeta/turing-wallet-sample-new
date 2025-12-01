@@ -46,12 +46,7 @@
 
 		<div class="form-item">
 			<label>PoolNFT Version</label>
-			<input
-				v-model="form.poolNFT_version"
-				type="text"
-				class="form-item-input"
-				readonly
-			/>
+			<input v-model="form.poolNFT_version" type="text" class="form-item-input" readonly />
 		</div>
 
 		<div class="form-item">
@@ -63,6 +58,14 @@
 				:copyable="true"
 				:deletable="true"
 			/>
+		</div>
+
+		<!-- broadcastEnabled -->
+		<div class="form-item checkbox-item">
+			<label class="checkbox-label">
+				<input type="checkbox" v-model="form.broadcastEnabled" />
+				<span>Enable Broadcast (`broadcastEnabled`)</span>
+			</label>
 		</div>
 
 		<div class="form-item-btn-container">
@@ -118,6 +121,7 @@ interface PoolNftBurnForm {
 	nft_contract_address: string;
 	poolNFT_version: string;
 	domain: string;
+	broadcastEnabled: boolean;
 }
 
 const DEFAULT_VERSION = '2';
@@ -134,6 +138,7 @@ const form = ref<PoolNftBurnForm>({
 	nft_contract_address: '',
 	poolNFT_version: DEFAULT_VERSION,
 	domain: '',
+	broadcastEnabled: true,
 });
 
 const errors = ref({
@@ -158,6 +163,7 @@ const resetForm = async () => {
 		nft_contract_address: '',
 		poolNFT_version: DEFAULT_VERSION,
 		domain: '',
+		broadcastEnabled: true,
 	};
 	// 清空错误信息
 	Object.keys(errors.value).forEach((key) => {
@@ -228,15 +234,16 @@ const handleSubmit = async () => {
 			params[0].domain = form.value.domain.trim();
 		}
 
+		if (!form.value.broadcastEnabled) {
+			params[0].broadcastEnabled = false;
+		}
+
 		console.log('POOLNFT_LP_BURN Generated Data:', params);
 
 		const response = await walletSendTransaction(params);
 		const txid = extractTxid(response);
-		
-		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
-		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
-		
-		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
+
+		if (form.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_LP_BURN', txid, response, params, walletInfo.value.curAddress);
 		}
 
@@ -268,7 +275,6 @@ watch(
 	},
 );
 
-
 onMounted(async () => {
 	await getWalletInfo();
 });
@@ -281,4 +287,3 @@ onMounted(async () => {
 	font-weight: 600;
 }
 </style>
-
