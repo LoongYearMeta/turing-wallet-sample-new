@@ -539,28 +539,64 @@ export function parseFTTransaction(
 				// 查找接收者的 Code Script 和 Tape Script
 				// Code Script 通常 satoshis = 500
 				// Tape Script 通常 satoshis = 0 且包含 "FTape"
+				// 接收者的 Code Script 和 Tape Script 通常是相邻的（第一个配对）
+				// 找零的 Code Script 和 Tape Script 通常在后面
 				
 				let recipientCodeScript: any = null;
 				let recipientTapeScript: any = null;
 				
-				for (const output of outputs) {
-					if (!output.script) continue;
+				// 优先查找第一个配对的 Code Script + Tape Script（接收者）
+				// 遍历输出，查找相邻的 Code Script 和 Tape Script 配对
+				for (let i = 0; i < outputs.length - 1; i++) {
+					const output1 = outputs[i];
+					const output2 = outputs[i + 1];
+					
+					if (!output1?.script || !output2?.script) continue;
 					
 					try {
-						const script = new tbc.Script(output.script);
-						const asm = script.toASM();
+						const script1 = new tbc.Script(output1.script);
+						const script2 = new tbc.Script(output2.script);
+						const asm1 = script1.toASM();
+						const asm2 = script2.toASM();
 						
-						// 查找 Tape Script（satoshis = 0 且包含 "FTape"）
-						if (output.satoshis === 0 && (asm.includes('4654617065') || asm.includes('FTape'))) {
-							recipientTapeScript = output;
-						}
+						// 检查是否是 Code Script + Tape Script 配对
+						// Code Script: satoshis = 500 且是复杂脚本
+						// Tape Script: satoshis = 0 且包含 "FTape"
+						const isCodeScript = output1.satoshis === 500 && asm1.length > 100;
+						const isTapeScript = output2.satoshis === 0 && (asm2.includes('4654617065') || asm2.includes('FTape'));
 						
-						// 查找 Code Script（satoshis = 500 且是复杂脚本）
-						if (output.satoshis === 500 && asm.length > 100) {
-							recipientCodeScript = output;
+						if (isCodeScript && isTapeScript) {
+							// 找到第一个配对，这应该是接收者的
+							recipientCodeScript = output1;
+							recipientTapeScript = output2;
+							break; // 找到第一个配对就停止，避免匹配到找零输出
 						}
 					} catch (e) {
 						continue;
+					}
+				}
+				
+				// 如果没有找到配对，使用原来的逻辑（向后兼容）
+				if (!recipientCodeScript || !recipientTapeScript) {
+					for (const output of outputs) {
+						if (!output.script) continue;
+						
+						try {
+							const script = new tbc.Script(output.script);
+							const asm = script.toASM();
+							
+							// 查找 Tape Script（satoshis = 0 且包含 "FTape"）
+							if (!recipientTapeScript && output.satoshis === 0 && (asm.includes('4654617065') || asm.includes('FTape'))) {
+								recipientTapeScript = output;
+							}
+							
+							// 查找 Code Script（satoshis = 500 且是复杂脚本）
+							if (!recipientCodeScript && output.satoshis === 500 && asm.length > 100) {
+								recipientCodeScript = output;
+							}
+						} catch (e) {
+							continue;
+						}
 					}
 				}
 				

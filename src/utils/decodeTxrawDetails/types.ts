@@ -29,6 +29,9 @@ export type ScriptType = typeof ScriptType[keyof typeof ScriptType];
 export interface ScriptOpReturnData {
 	type?: string;
 	publicKeyHash?: string;
+	address?: string; // 从 publicKeyHash 解码出的地址（当 flag 为 00 时）
+	hash?: string; // 哈希值（当 flag 为 01 时）
+	flag?: 'address' | 'hash' | 'unknown'; // 标志类型：00=address, 01=hash
 	codeType?: string;
 	ft_data?: ParsedFTTransaction;
 	hexParts?: string[];

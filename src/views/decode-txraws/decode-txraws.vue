@@ -110,6 +110,15 @@
 					</svg>
 					<span>Txraw Detailed Result</span>
 				</div>
+				<button
+					v-if="rawDecodedData"
+					@click="toggleShowAsm"
+					type="button"
+					class="view-asm-btn"
+					:class="{ active: showAsm }"
+				>
+					{{ showAsm ? 'Hide ASM' : 'View ASM' }}
+				</button>
 			</div>
 			<MyTextarea
 				v-model="decodedTxrawDetail"
@@ -146,6 +155,8 @@ const isSubmitting = ref(false);
 const txraw = ref('');
 const decodedTxraw = ref('');
 const decodedTxrawDetail = ref('');
+const showAsm = ref(false); // 控制是否显示 ASM
+const rawDecodedData = ref<any>(null); // 保存原始解码数据（包含 asm）
 
 // DECODE TXRAW
 const handleDecodeTxraws = async () => {
@@ -167,14 +178,23 @@ const handleDecodeTxraws = async () => {
 		
 		// 解码详细信息（异步，不阻塞基本解码）
 		decodedTxrawDetail.value = 'Decoding detailed information...';
+		showAsm.value = false; // 重置 ASM 显示状态
+		rawDecodedData.value = null; // 清空原始数据
 		try {
 			const detailResponse = await decodeTxRawDetail(txraw.value);
-			decodedTxrawDetail.value = JSON.stringify(detailResponse, null, 2);
+			// 保存原始数据（包含 asm）
+			rawDecodedData.value = detailResponse;
+			// 根据 showAsm 状态决定是否包含 asm 字段
+			const responseToDisplay = showAsm.value 
+				? detailResponse 
+				: removeAsmFields(detailResponse);
+			decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 		} catch (detailError) {
 			console.error('Decode txraw detail error:', detailError);
 			decodedTxrawDetail.value = `Failed to decode detailed information: ${
 				detailError instanceof Error ? detailError.message : 'Unknown error'
 			}`;
+			rawDecodedData.value = null;
 		}
 		
 		// 显示成功提示
@@ -186,9 +206,46 @@ const handleDecodeTxraws = async () => {
 		toastApi.showError('Failed to decode txraw', 3000);
 		decodedTxraw.value = '';
 		decodedTxrawDetail.value = '';
+		rawDecodedData.value = null;
 	} finally {
 		isSubmitting.value = false;
 	}
+};
+
+// 切换 ASM 显示状态
+const toggleShowAsm = () => {
+	showAsm.value = !showAsm.value;
+	
+	// 如果有原始数据，根据新的 showAsm 状态重新格式化显示
+	if (rawDecodedData.value) {
+		const responseToDisplay = showAsm.value 
+			? rawDecodedData.value 
+			: removeAsmFields(rawDecodedData.value);
+		decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
+	}
+};
+
+// 递归移除对象中的 asm 字段
+const removeAsmFields = (obj: any): any => {
+	if (obj === null || obj === undefined) {
+		return obj;
+	}
+	
+	if (Array.isArray(obj)) {
+		return obj.map(item => removeAsmFields(item));
+	}
+	
+	if (typeof obj === 'object') {
+		const result: any = {};
+		for (const key in obj) {
+			if (key !== 'asm') {
+				result[key] = removeAsmFields(obj[key]);
+			}
+		}
+		return result;
+	}
+	
+	return obj;
 };
 
 // 检查钱包连接状态
@@ -199,4 +256,56 @@ onMounted(async () => {
 
 <style scoped>
 @import '../../assets/form-page.css';
+
+.msg-form-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--spacing-md);
+}
+
+.view-asm-btn {
+	padding: 6px 12px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--color-primary);
+	background-color: var(--form-btn-primary-color);
+	color: var(--color-primary);
+	font-size: var(--font-size-small);
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.view-asm-btn:hover {
+	color: var(--color-text-primary);
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-sm);
+}
+
+.view-asm-btn:active {
+	transform: translateY(0);
+	box-shadow: none;
+}
+
+.view-asm-btn.active {
+	color: var(--color-text-primary);
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+	.msg-form-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--spacing-xs);
+	}
+	
+	.view-asm-btn {
+		align-self: flex-end;
+	}
+}
 </style>

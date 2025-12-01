@@ -91,6 +91,77 @@ function hexToAscii(hex: string): string {
 	return result;
 }
 
+/**
+ * 从 publicKeyHash 解码地址或hash
+ * 根据 tbc-contract 的逻辑：
+ * - 如果 hash 以 00 结尾，表示是地址（address），前20字节是 publicKeyHash
+ * - 如果 hash 以 01 结尾，表示是 hash，前20字节是 hash
+ * 
+ * @param hex 十六进制字符串，应该是21字节（42个hex字符）
+ * @returns 如果是地址则返回地址字符串，如果是hash则返回hash字符串，否则返回null
+ */
+function decodeAddressFromPublicKeyHash(hex: string): { address?: string; hash?: string; flag: 'address' | 'hash' | 'unknown' } | null {
+	try {
+		// 移除所有空格
+		const cleanHex = hex.replace(/\s+/g, '');
+		
+		// 检查长度：应该是 21 字节（20字节hash + 1字节标志）= 42个hex字符
+		if (cleanHex.length !== 42) {
+			return null;
+		}
+		
+		const buffer = Buffer.from(cleanHex, 'hex');
+		if (buffer.length !== 21) {
+			return null;
+		}
+		
+		const flag = buffer[20]; // 最后一个字节是标志
+		const hashBuffer = buffer.slice(0, 20); // 前20字节是hash
+		const hashHex = hashBuffer.toString('hex');
+		
+		// 如果标志是 0x00，表示是地址
+		if (flag === 0x00) {
+			try {
+				// 尝试使用 livenet 网络
+				const address = new tbc.Address(hashBuffer, tbc.Networks.livenet);
+				return {
+					address: address.toString(),
+					flag: 'address',
+				};
+			} catch (e) {
+				// 如果 livenet 失败，尝试 testnet
+				try {
+					const address = new tbc.Address(hashBuffer, tbc.Networks.testnet);
+					return {
+						address: address.toString(),
+						flag: 'address',
+					};
+				} catch (e2) {
+					// 如果都失败，返回hash，但保留 flag 信息
+					// 这样调用者可以知道这应该是一个地址，只是解析失败
+					return {
+						hash: hashHex,
+						flag: 'address', // 标志是address，但解析失败
+					};
+				}
+			}
+		}
+		
+		// 如果标志是 0x01，表示是hash
+		if (flag === 0x01) {
+			return {
+				hash: hashHex,
+				flag: 'hash',
+			};
+		}
+		
+		return null;
+	} catch (error) {
+		console.error('Failed to decode address from publicKeyHash:', error);
+		return null;
+	}
+}
+
 function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 	if (!parts.length) {
 		return undefined;
@@ -106,25 +177,112 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 	// 单个数据段，尝试直接返回可读文本
 	if (parts.length === 1) {
 		const ascii = asciiParts[0]?.trim();
+		// 检查可读性：如果包含太多 '.'，认为不可读
 		if (ascii) {
-			return { type: ascii };
+			const dotCount = (ascii.match(/\./g) || []).length;
+			const readableRatio = ascii.length > 0 ? (ascii.length - dotCount) / ascii.length : 0;
+			// 如果可读字符比例 > 50%，使用 ASCII，否则返回 hex
+			if (readableRatio > 0.5) {
+				return { type: ascii };
+			}
 		}
-		return { hexParts: parts, asciiParts };
+		// 如果不可读，只返回 hex，不返回 asciiParts（避免显示乱码）
+		return { hexParts: parts };
 	}
 
-	// 两个数据段：默认第一个是 hash，第二个是类型标识
+	// 两个数据段：检查第一个是否是 publicKeyHash（21字节，以00或01结尾）
+	// 这在 FT-TRANSFER 交易中很常见，第一个数据段包含接收地址信息
 	if (parts.length === 2) {
-		const codeType = asciiParts[1]?.trim() || '';
+		const firstPart = parts[0]?.replace(/\s+/g, '') || '';
+		const secondPart = parts[1]?.replace(/\s+/g, '') || '';
+		
+		// 检查第一个数据段是否是21字节（42个hex字符）
+		if (firstPart.length === 42) {
+			const decodedResult = decodeAddressFromPublicKeyHash(firstPart);
+			
+			if (decodedResult) {
+				// 如果成功解码，返回地址或hash信息
+				const result: ScriptOpReturnData = {
+					publicKeyHash: firstPart.slice(0, 40), // 前20字节的hash（不含标志）
+					flag: decodedResult.flag,
+				};
+				
+				// 设置地址或hash
+				if (decodedResult.address) {
+					// 如果已经成功解析出地址，直接使用
+					result.address = decodedResult.address;
+				} else if (decodedResult.flag === 'address') {
+					// 如果 flag 是 'address' 但没有解析出地址，说明 decodeAddressFromPublicKeyHash 失败了
+					// 但我们仍然应该尝试解析，因为 flag 明确表示这是地址
+					const hashBuffer = Buffer.from(firstPart.slice(0, 40), 'hex');
+					try {
+						// 尝试使用 livenet
+						const address = new tbc.Address(hashBuffer, tbc.Networks.livenet);
+						result.address = address.toString();
+					} catch (e) {
+						try {
+							// 尝试使用 testnet
+							const address = new tbc.Address(hashBuffer, tbc.Networks.testnet);
+							result.address = address.toString();
+						} catch (e2) {
+							// 如果都失败，保留 hash 以便调试
+							result.hash = decodedResult.hash || firstPart.slice(0, 40);
+						}
+					}
+				} else if (decodedResult.hash) {
+					// 如果 flag 是 'hash'，直接使用 hash
+					result.hash = decodedResult.hash;
+				}
+				
+				// 处理第二个数据段（codeType）
+				// 先尝试 ASCII 转换，如果结果不可读（包含太多 '.'），则使用原始 hex
+				const asciiCodeType = asciiParts[1]?.trim() || '';
+				const dotCount = (asciiCodeType.match(/\./g) || []).length;
+				const readableRatio = asciiCodeType.length > 0 ? (asciiCodeType.length - dotCount) / asciiCodeType.length : 0;
+				
+				// 如果可读字符比例 > 50%，使用 ASCII，否则使用原始 hex
+				if (readableRatio > 0.5 && asciiCodeType.length > 0) {
+					result.codeType = asciiCodeType;
+				} else {
+					result.codeType = secondPart;
+				}
+				
+				return result;
+			}
+		}
+		
+		// 如果不是21字节格式，使用原来的逻辑
+		// 同样处理 codeType，避免乱码
+		const asciiCodeType = asciiParts[1]?.trim() || '';
+		const dotCount = (asciiCodeType.match(/\./g) || []).length;
+		const readableRatio = asciiCodeType.length > 0 ? (asciiCodeType.length - dotCount) / asciiCodeType.length : 0;
+		
+		let codeType: string;
+		if (readableRatio > 0.5 && asciiCodeType.length > 0) {
+			codeType = asciiCodeType;
+		} else {
+			codeType = parts[1] || '';
+		}
+		
 		return {
 			publicKeyHash: parts[0],
-			codeType: codeType || parts[1],
+			codeType: codeType,
 		};
 	}
 
 	// 其他情况保留 hex/ASCII 以便调试
+	// 过滤掉不可读的 ASCII（包含太多 '.' 的）
+	const filteredAsciiParts = asciiParts.map((ascii, index) => {
+		if (!ascii || ascii.length === 0) return '';
+		const dotCount = (ascii.match(/\./g) || []).length;
+		const readableRatio = (ascii.length - dotCount) / ascii.length;
+		// 如果可读字符比例 < 50%，返回空字符串，避免显示乱码
+		return readableRatio >= 0.5 ? ascii : '';
+	}).filter(ascii => ascii.length > 0);
+	
 	return {
 		hexParts: parts,
-		asciiParts,
+		asciiParts: filteredAsciiParts.length > 0 ? filteredAsciiParts : undefined,
 	};
 }
 
