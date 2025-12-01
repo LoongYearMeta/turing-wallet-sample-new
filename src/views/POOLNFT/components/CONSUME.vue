@@ -67,6 +67,18 @@
 		</div>
 
 		<div class="form-item">
+			<label>Lock Time (Optional)</label>
+			<input
+				v-model="form.lockTime"
+				type="text"
+				inputmode="numeric"
+				class="form-item-input"
+				placeholder="Lock until block height, e.g. 900000"
+			/>
+			<div v-if="errors.lockTime" class="form-item-error">{{ errors.lockTime }}</div>
+		</div>
+
+		<div class="form-item">
 			<label>PoolNFT Version</label>
 			<input
 				v-model="form.poolNFT_version"
@@ -141,6 +153,7 @@ interface PoolNftConsumeForm {
 	address: string;
 	ft_amount: string;
 	poolNFT_version: number | '';
+	lockTime: string;
 	domain: string;
 }
 
@@ -160,6 +173,7 @@ const form = ref<PoolNftConsumeForm>({
 	address: '',
 	ft_amount: DEFAULT_FT_AMOUNT,
 	poolNFT_version: DEFAULT_VERSION,
+	lockTime: '',
 	domain: '',
 });
 
@@ -167,6 +181,7 @@ const errors = ref({
 	nft_contract_address: '',
 	address: '',
 	ft_amount: '',
+	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -188,6 +203,7 @@ const resetForm = async () => {
 		address: '',
 		ft_amount: DEFAULT_FT_AMOUNT,
 		poolNFT_version: DEFAULT_VERSION,
+		lockTime: '',
 		domain: '',
 	};
 	// 清空错误信息
@@ -235,6 +251,18 @@ const validateForm = () => {
 		isValid = false;
 	} else {
 		errors.value.ft_amount = '';
+	}
+
+	// lockTime 为可选字段，若填写则需要是正数
+	if (form.value.lockTime && form.value.lockTime.trim()) {
+		if (!validatePositiveNumber(form.value.lockTime)) {
+			errors.value.lockTime = 'Lock time must be a positive number';
+			isValid = false;
+		} else {
+			errors.value.lockTime = '';
+		}
+	} else {
+		errors.value.lockTime = '';
 	}
 
 
@@ -286,6 +314,11 @@ const handleSubmit = async () => {
 
 		params[0].poolNFT_version = 2;
 
+		// lockTime 为可选字段
+		if (form.value.lockTime && form.value.lockTime.trim()) {
+			params[0].lockTime = Number(form.value.lockTime.trim());
+		}
+
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();
 		}
@@ -294,8 +327,11 @@ const handleSubmit = async () => {
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
-
-		if (txid && walletInfo.value.curAddress) {
+		
+		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
+		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
+		
+		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
 			addTransactionHistory(
 				'POOLNFT_LP_CONSUME',
 				txid,
@@ -353,6 +389,22 @@ watch(
 			errors.value.ft_amount = 'FT amount must be a positive number';
 		} else {
 			errors.value.ft_amount = '';
+		}
+	},
+);
+
+watch(
+	() => form.value.lockTime,
+	() => {
+		if (isResetting.value) return;
+		if (form.value.lockTime && form.value.lockTime.trim()) {
+			if (!validatePositiveNumber(form.value.lockTime)) {
+				errors.value.lockTime = 'Lock time must be a positive number';
+			} else {
+				errors.value.lockTime = '';
+			}
+		} else {
+			errors.value.lockTime = '';
 		}
 	},
 );

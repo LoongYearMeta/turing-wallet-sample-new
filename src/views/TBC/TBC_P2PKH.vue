@@ -237,8 +237,11 @@ const handleSendP2PKH = async () => {
 		// 提取 txid
 		const txid = extractTxid(response);
 		
+		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
+		const isBroadcastTx = !result[0] || (result[0] as any).broadcastEnabled !== false;
+		
 		// 记录历史
-		if (txid && walletInfo.value.curAddress) {
+		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
 			addTransactionHistory('P2PKH', txid, response, result, walletInfo.value.curAddress);
 		}
 		

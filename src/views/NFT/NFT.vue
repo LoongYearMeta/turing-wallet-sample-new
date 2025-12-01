@@ -789,8 +789,11 @@ const handleCollectionCreate = async () => {
 		// 提取 txid
 		const txid = extractTxid(response);
 		
+		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
+		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
+		
 		// 记录历史
-		if (txid && walletInfo.value.curAddress) {
+		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
 			addTransactionHistory('COLLECTION_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
 		
@@ -850,8 +853,11 @@ const handleNftCreate = async () => {
 		// 提取 txid
 		const txid = extractTxid(response);
 		
+		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
+		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
+		
 		// 记录历史
-		if (txid && walletInfo.value.curAddress) {
+		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
 			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
 		
@@ -902,8 +908,11 @@ const handleNftTransfer = async () => {
 		// 提取 txid
 		const txid = extractTxid(response);
 		
+		// 只有在实际广播交易（即 broadcastEnabled !== false）时才记录历史
+		const isBroadcastTx = !params[0] || params[0].broadcastEnabled !== false;
+		
 		// 记录历史
-		if (txid && walletInfo.value.curAddress) {
+		if (txid && walletInfo.value.curAddress && isBroadcastTx) {
 			addTransactionHistory('NFT_TRANSFER', txid, response, params, walletInfo.value.curAddress);
 		}
 		

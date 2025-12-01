@@ -239,6 +239,8 @@ onUnmounted(() => {
 	flex-direction: column;
 	width: 100%;
 	background-color: var(--form-item-bg-color);
+	border-radius: 0 0 var(--radius-sm) var(--radius-sm); /* 只设置下方圆角，与容器匹配 */
+	overflow: hidden; /* 确保内部内容不会溢出圆角区域 */
 }
 
 /* 分割线样式 */
@@ -267,7 +269,7 @@ onUnmounted(() => {
 	padding: var(--spacing-xs);
 	padding-bottom: var(--spacing-xs);
 	border: none;
-	border-radius: 0;
+	border-radius: var(--radius-sm) var(--radius-sm) 0 0; /* 默认只设置上方圆角（当有操作按钮时） */
 	resize: none; /* 禁用手动调整大小 */
 	font-size: var(--font-size-subtitle);
 	line-height: 1.5;
@@ -278,10 +280,14 @@ onUnmounted(() => {
 	overflow-y: hidden; /* 默认隐藏滚动条 */
 }
 
+/* 当没有操作按钮时，textarea 作为最后一个子元素，设置完整圆角 */
+.m-textarea-container > .m-textarea:last-child {
+	border-radius: var(--radius-sm); /* 完整圆角 */
+}
+
 /* 容器聚焦样式：强化视觉反馈 */
 .m-textarea-container:focus-within {
 	border-color: var(--color-primary);
-	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
 }
 
 /* 文本域聚焦样式 */
