@@ -145,6 +145,47 @@
 	font-weight: 600;
 }
 
+/* File input styles */
+.form-item-file-input {
+	width: 100%;
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--form-item-bg-color);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+	cursor: pointer;
+}
+
+.form-item-file-input:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+}
+
+.file-preview {
+	margin-top: var(--spacing-xs);
+	padding: var(--spacing-xs);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-sm);
+	background-color: var(--form-item-bg-color);
+}
+
+.file-preview-image {
+	max-width: 100%;
+	max-height: 200px;
+	border-radius: var(--radius-sm);
+	object-fit: contain;
+}
+
+.file-preview-text {
+	margin-top: var(--spacing-xs);
+	font-size: var(--font-size-small);
+	color: var(--color-text-secondary);
+}
+
 /* Input styled like textarea */
 .form-item-input-textarea {
 	width: 100%;
