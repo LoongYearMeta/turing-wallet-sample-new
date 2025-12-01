@@ -1,6 +1,6 @@
 /**
- * FT/NFT 交易解析模块
- * 识别和解析 FT/NFT 相关交易的数据
+ * FT 交易解析模块
+ * 根据 tbc-contract 的 FT 合约实现来识别和解析 FT 交易
  */
 
 import * as tbc from 'tbc-lib-js';
@@ -12,9 +12,6 @@ import { extractOPReturnDataFromASM } from './scriptIdentifier';
 export const TransactionType = {
 	FT_MINT: 'FT_MINT',
 	FT_TRANSFER: 'FT_TRANSFER',
-	NFT_CREATE: 'NFT_CREATE',
-	NFT_TRANSFER: 'NFT_TRANSFER',
-	COLLECTION_CREATE: 'COLLECTION_CREATE',
 	UNKNOWN: 'UNKNOWN',
 } as const;
 
@@ -37,53 +34,19 @@ export interface FTMintData {
  * FT Transfer 数据
  */
 export interface FTTransferData {
-	ft_contract_address: string;
-	ft_amount: number;
-	address: string;
-	tbc_amount?: number;
+	address: string; // 接收地址
+	ft_amount: number; // 转移数量
+	ft_contract_address?: string; // FT 合约地址（可选）
 }
 
 /**
- * NFT Create 数据
+ * 解析后的 FT 交易信息
  */
-export interface NFTCreateData {
-	nftName: string;
-	description: string;
-	file: string;
-	symbol?: string;
-	attributes?: string;
-	collection_id: string;
-}
-
-/**
- * NFT Transfer 数据
- */
-export interface NFTTransferData {
-	nft_contract_address: string;
-	address: string;
-}
-
-/**
- * Collection Create 数据
- */
-export interface CollectionCreateData {
-	collectionName: string;
-	description: string;
-	supply: number;
-	file: string;
-}
-
-/**
- * 解析后的 FT/NFT 交易信息
- */
-export interface ParsedFTNFTTransaction {
+export interface ParsedFTTransaction {
 	type: TransactionType;
-	ftMintData?: FTMintData;
-	ftTransferData?: FTTransferData;
-	nftCreateData?: NFTCreateData;
-	nftTransferData?: NFTTransferData;
-	collectionCreateData?: CollectionCreateData;
-	rawData?: string; // 原始 OP_RETURN 数据
+	data?: any; // 统一的数据字段
+	// FT_MINT: data 为 FTMintData
+	// FT_TRANSFER: data 为 FTTransferData
 	error?: string;
 }
 
@@ -92,111 +55,323 @@ export interface ParsedFTNFTTransaction {
  */
 function hexToString(hex: string): string {
 	try {
-		let result = '';
+		let text = '';
 		for (let i = 0; i < hex.length; i += 2) {
-			const charCode = parseInt(hex.substr(i, 2), 16);
-			if (charCode === 0) break; // 遇到 null 终止符
-			result += String.fromCharCode(charCode);
+			const hexByte = hex.substr(i, 2);
+			if (hexByte.length < 2) break;
+			const byte = parseInt(hexByte, 16);
+			if (isNaN(byte)) break;
+			text += String.fromCharCode(byte);
 		}
-		return result;
+		return text;
 	} catch (error) {
+		console.error('Failed to convert hex to string:', error);
 		return '';
 	}
 }
 
+function sanitizeText(input: string): string {
+	return input.replace(/\u0000+$/g, '').trim();
+}
+
+function normalizeScriptHex(script: any): string {
+	if (!script) return '';
+	if (typeof script === 'string') {
+		return script.replace(/\s+/g, '');
+	}
+	if (Buffer.isBuffer(script)) {
+		return script.toString('hex');
+	}
+	if (script instanceof Uint8Array) {
+		return Buffer.from(script).toString('hex');
+	}
+	try {
+		return Buffer.from(script).toString('hex');
+	} catch {
+		return '';
+	}
+}
+
+function extractOpReturnChunks(script: tbc.Script): string[] {
+	const chunksHex: string[] = [];
+	const chunks = script.chunks || [];
+	for (let i = 0; i < chunks.length; i++) {
+		const chunk = chunks[i];
+		if (!chunk) continue;
+
+		if (chunk.opcodenum === tbc.Opcode.OP_RETURN) {
+			for (let j = i + 1; j < chunks.length; j++) {
+				const dataChunk = chunks[j];
+				if (!dataChunk?.buf) {
+					break;
+				}
+				chunksHex.push(dataChunk.buf.toString('hex'));
+			}
+			break;
+		}
+
+		if (chunk.opcodenum === 0 && i + 1 < chunks.length) {
+			const nextChunk = chunks[i + 1];
+			if (nextChunk?.opcodenum === tbc.Opcode.OP_RETURN) {
+				for (let j = i + 2; j < chunks.length; j++) {
+					const dataChunk = chunks[j];
+					if (!dataChunk?.buf) {
+						break;
+					}
+					chunksHex.push(dataChunk.buf.toString('hex'));
+				}
+				break;
+			}
+		}
+	}
+	return chunksHex;
+}
+
+function buildMintDataFromFields(
+	amountHex: string,
+	decimalHex: string,
+	nameHex: string,
+	symbolHex: string,
+): FTMintData | null {
+	if (!amountHex || !decimalHex || !nameHex || !symbolHex) {
+		return null;
+	}
+
+	const decimal = parseInt(decimalHex, 16);
+	if (Number.isNaN(decimal)) {
+		return null;
+	}
+
+	const amountBuffer = Buffer.from(amountHex, 'hex');
+	if (amountBuffer.length < 48) {
+		return null;
+	}
+
+	let totalSupply = BigInt(0);
+	for (let i = 0; i < 6; i++) {
+		const amount = amountBuffer.readBigUInt64LE(i * 8);
+		totalSupply += amount;
+	}
+
+	const amount = formatAmount(totalSupply, decimal);
+	const name = sanitizeText(hexToString(nameHex));
+	const symbol = sanitizeText(hexToString(symbolHex));
+
+	return {
+		name: name || 'Unknown',
+		symbol: symbol || 'UNK',
+		amount,
+		decimal,
+	};
+}
+
+
 /**
- * 从 OP_RETURN 数据中提取 JSON 字符串
- * OP_RETURN 数据可能是：
- * 1. 直接的 JSON 字符串（hex 编码）
- * 2. 包含 flag 和数据的结构
- * 3. 多个 hex 字符串用空格分隔
+ * 格式化金额，避免科学计数法
  */
-function extractJSONFromOPReturn(opReturnData: string): any {
-	if (!opReturnData) return null;
+function formatAmount(value: number | bigint, decimal: number): number {
+	let safeDecimal = Number(decimal);
+	if (!Number.isFinite(safeDecimal) || safeDecimal < 0) {
+		safeDecimal = 6;
+	}
+	safeDecimal = Math.min(Math.max(Math.floor(safeDecimal), 0), 100);
+
+	const numericValue = typeof value === 'bigint' ? Number(value) : Number(value);
+	if (!Number.isFinite(numericValue)) {
+		return 0;
+	}
+
+	const divisor = Math.pow(10, safeDecimal);
+	const result = numericValue / divisor;
 
 	try {
-		// 移除空格，将所有 hex 字符串连接起来（只声明一次）
-		const cleanHex = opReturnData.replace(/\s+/g, '');
-		
-		// 尝试直接解析为 JSON（如果是 hex 编码的 JSON）
-		const text = hexToString(cleanHex);
-		if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-			return JSON.parse(text);
-		}
+		return Number(result.toFixed(safeDecimal));
+	} catch (error) {
+		return result;
+	}
+}
 
-		// 尝试将整个 hex 作为 JSON 解析
-		// 某些情况下，数据可能是 UTF-8 编码的 JSON
-		try {
-			// 浏览器兼容的 hex 到 UTF-8 转换
-			let utf8Text = '';
-			for (let i = 0; i < cleanHex.length; i += 2) {
-				const hexByte = cleanHex.substr(i, 2);
-				if (hexByte.length < 2) break;
-				const byte = parseInt(hexByte, 16);
-				if (isNaN(byte)) break;
-				utf8Text += String.fromCharCode(byte);
-			}
-			if (utf8Text.trim().startsWith('{') || utf8Text.trim().startsWith('[')) {
-				return JSON.parse(utf8Text);
-			}
-		} catch (e) {
-			// 忽略错误，继续尝试其他方法
-		}
-
-		// 如果包含 flag 标识，尝试提取
-		// 格式可能是：flag + 分隔符 + data
-		const flagPatterns = [
-			'FT_MINT',
-			'FT_TRANSFER',
-			'NFT_CREATE',
-			'NFT_TRANSFER',
-			'COLLECTION_CREATE',
-		];
-		
-		// 在循环外使用已声明的 cleanHex
-		for (const flag of flagPatterns) {
-			// 浏览器兼容的字符串到 hex 转换
-			let flagHex = '';
-			for (let i = 0; i < flag.length; i++) {
-				const charCode = flag.charCodeAt(i);
-				flagHex += charCode.toString(16).padStart(2, '0');
-			}
-			
-			if (cleanHex.includes(flagHex)) {
-				// 找到 flag，尝试提取后续数据
-				const flagIndex = cleanHex.indexOf(flagHex);
-				const afterFlag = cleanHex.substring(flagIndex + flagHex.length);
-				// 尝试解析后续数据
-				try {
-					let dataText = '';
-					for (let i = 0; i < afterFlag.length; i += 2) {
-						const hexByte = afterFlag.substr(i, 2);
-						if (hexByte.length < 2) break;
-						const byte = parseInt(hexByte, 16);
-						if (isNaN(byte)) break;
-						dataText += String.fromCharCode(byte);
+/**
+ * 从 Tape Script 中提取 FT 信息
+ * Tape Script 格式：OP_FALSE OP_RETURN [amount(48字节)] [decimal(1字节)] [name(hex)] [symbol(hex)] 4654617065
+ * 
+ * 优先从 ASM 字符串解析（更准确），如果 ASM 不可用，则从 buffer 解析
+ */
+function parseTapeScript(tapeScriptHex: string, asm?: string, scriptObj?: tbc.Script): FTMintData | null {
+	try {
+		// 方法0：直接从 Script chunks 解析
+		if (scriptObj) {
+			const chunks = extractOpReturnChunks(scriptObj);
+			if (chunks.length >= 4) {
+				const [amountHex, decimalHex, nameHex, symbolHex] = chunks;
+				if (amountHex && decimalHex && nameHex && symbolHex) {
+					const mintData = buildMintDataFromFields(amountHex, decimalHex, nameHex, symbolHex);
+					if (mintData) {
+						return mintData;
 					}
-					if (dataText.trim().startsWith('{')) {
-						return { flag, ...JSON.parse(dataText) };
-					}
-				} catch (e) {
-					// 忽略错误
 				}
 			}
 		}
 
+		// 方法1：优先从 ASM 解析（更准确）
+		if (asm) {
+			const parts = asm.split(/\s+/);
+			// 格式：0 OP_RETURN [amount] [decimal] [name] [symbol] 4654617065
+			if (parts.length >= 7 && parts[0] === '0' && parts[1] === 'OP_RETURN') {
+				const [amountHex, decimalHex, nameHex, symbolHex] = [parts[2], parts[3], parts[4], parts[5]];
+				if (amountHex && decimalHex && nameHex && symbolHex) {
+					const mintData = buildMintDataFromFields(amountHex, decimalHex, nameHex, symbolHex);
+					if (mintData) {
+						return mintData;
+					}
+				}
+			}
+		}
+		
+		// 方法2：从 buffer 解析（备用）
+		const buffer = Buffer.from(tapeScriptHex, 'hex');
+		
+		// 跳过 OP_FALSE OP_RETURN (2字节)
+		if (buffer.length < 3) return null;
+		
+		let offset = 2; // 跳过 OP_FALSE OP_RETURN
+		
+		// 跳过 amount (48字节，6个64位整数)
+		offset += 48;
+		
+		// 读取 decimal (1字节)
+		if (offset >= buffer.length) return null;
+		const decimal = buffer[offset];
+		offset += 1;
+		
+		// 查找 "FTape" 标识 (4654617065)
+		const ftapeMarker = Buffer.from('4654617065', 'hex'); // "FTape"
+		const ftapeIndex = buffer.indexOf(ftapeMarker, offset);
+		if (ftapeIndex === -1) return null;
+		
+		// name 和 symbol 在 decimal 和 "FTape" 之间
+		// 由于没有明确分隔符，尝试找到 name 和 symbol 的分界点
+		// 通常 name 和 symbol 长度相近，尝试从中间分割
+		const nameSymbolData = buffer.slice(offset, ftapeIndex);
+		const nameSymbolHex = nameSymbolData.toString('hex');
+		
+		// 尝试从中间分割（假设 name 和 symbol 长度相近）
+		const midPoint = Math.floor(nameSymbolHex.length / 2);
+		const nameHex = nameSymbolHex.substring(0, midPoint);
+		const symbolHex = nameSymbolHex.substring(midPoint);
+		
+		const name = sanitizeText(hexToString(nameHex));
+		const symbol = sanitizeText(hexToString(symbolHex));
+		
+		// 从 amount 中提取总供应量
+		const amountBuffer = buffer.slice(2, 2 + 48);
+		let totalSupply = BigInt(0);
+		for (let i = 0; i < 6; i++) {
+			const amount = amountBuffer.readBigUInt64LE(i * 8);
+			totalSupply += amount;
+		}
+		
+		// 转换为实际数量（考虑 decimal）
+		const decimalValue = decimal || 6; // 默认 decimal 为 6
+		const amount = formatAmount(totalSupply, decimalValue);
+		
+		return {
+			name: name || 'Unknown',
+			symbol: symbol || 'UNK',
+			amount: amount,
+			decimal: decimalValue,
+		};
+	} catch (error) {
+		console.error('Failed to parse tape script:', error);
+		return null;
+	}
+}
+
+/**
+ * 从 Code Script 中提取接收地址
+ * Code Script 在位置 1537 包含 21 字节的地址哈希（20字节哈希 + 1字节标志）
+ */
+function extractAddressFromCodeScript(codeScriptHex: string): string | null {
+	try {
+		const buffer = Buffer.from(codeScriptHex, 'hex');
+		
+		// 检查长度
+		if (buffer.length < 1537 + 21) return null;
+		
+		// 提取地址哈希部分（位置 1537，21字节）
+		const addressHashBuffer = buffer.slice(1537, 1537 + 21);
+		const flag = addressHashBuffer[20]; // 最后一个字节是标志
+		const hashBuffer = addressHashBuffer.slice(0, 20); // 前20字节是哈希
+		
+		// 如果标志是 0x00，表示是地址
+		if (flag === 0x00) {
+			try {
+				const address = new tbc.Address(hashBuffer, tbc.Networks.livenet);
+				return address.toString();
+			} catch (e) {
+				// 如果无法解析为地址，返回哈希
+				return hashBuffer.toString('hex');
+			}
+		}
+		
+		// 如果标志是 0x01，表示是哈希
+		if (flag === 0x01) {
+			return hashBuffer.toString('hex');
+		}
+		
 		return null;
 	} catch (error) {
-		console.error('Failed to extract JSON from OP_RETURN:', error);
+		console.error('Failed to extract address from code script:', error);
 		return null;
+	}
+}
+
+/**
+ * 从 Tape Script 中提取余额
+ * 使用与 FT.getBalanceFromTape 相同的逻辑
+ */
+function getBalanceFromTape(tapeScriptHex: string): bigint {
+	try {
+		const buffer = Buffer.from(tapeScriptHex, 'hex');
+		
+		// 跳过 OP_FALSE OP_RETURN (2字节)
+		if (buffer.length < 3) return BigInt(0);
+		
+		// 读取 amount 部分（位置 3，48字节）
+		const amountBuffer = buffer.slice(3, 3 + 48);
+		if (amountBuffer.length < 48) return BigInt(0);
+		
+		let balance = BigInt(0);
+		for (let i = 0; i < 6; i++) {
+			const amount = amountBuffer.readBigUInt64LE(i * 8);
+			balance += amount;
+		}
+		
+		return balance;
+	} catch (error) {
+		console.error('Failed to get balance from tape:', error);
+		return BigInt(0);
 	}
 }
 
 /**
  * 识别交易类型
- * 通过分析输出的脚本 ASM 来判断交易类型
+ * 根据 FT 合约的实际实现来识别
+ * 
+ * 识别逻辑：
+ * 1. FT_MINT：必须包含 "for ft mint" flag 的 OP_RETURN
+ * 2. FT_TRANSFER：有 Code Script (satoshis=500) + Tape Script (satoshis=0) 的组合，但没有 "for ft mint" flag
  */
-export function identifyTransactionType(outputs: any[]): TransactionType {
+const FT_UNLOCK_SCRIPT_MIN_LENGTH = 300;
+
+export function identifyTransactionType(txObj: any): TransactionType {
+	const outputs = txObj.outputs || [];
+	const inputs = txObj.inputs || [];
+	let hasMintFlag = false;
+	let hasCodeScript = false;
+	let hasTapeScript = false;
+	let hasFtUnlockInput = false;
+	
 	for (const output of outputs) {
 		if (!output.script) continue;
 
@@ -204,230 +379,280 @@ export function identifyTransactionType(outputs: any[]): TransactionType {
 			const script = new tbc.Script(output.script);
 			const asm = script.toASM();
 
-			// 检查是否包含 OP_RETURN
-			if (!asm.includes('OP_RETURN')) continue;
-
-			// 提取 OP_RETURN 数据
-			const opReturnData = extractOPReturnDataFromASM(asm);
-			if (!opReturnData) continue;
-
-			// 尝试解析 JSON
-			const jsonData = extractJSONFromOPReturn(opReturnData);
-			if (!jsonData) continue;
-
-			// 检查 flag 字段
-			if (jsonData.flag) {
-				switch (jsonData.flag) {
-					case 'FT_MINT':
-						return TransactionType.FT_MINT;
-					case 'FT_TRANSFER':
+			// 检查 "for ft mint" flag
+			if (asm.includes('OP_RETURN')) {
+				console.log('asm', asm);
+				const opReturnData = extractOPReturnDataFromASM(asm);
+				console.log('opReturnData', opReturnData);
+				if (opReturnData) {
+					// 检查是否包含 "for ft mint" flag
+					const mintFlagHex = Buffer.from('for ft mint', 'utf8').toString('hex');
+					const cleanOpReturn = opReturnData.replace(/\s+/g, '');
+					console.log('cleanOpReturn', cleanOpReturn);
+					if (cleanOpReturn.includes(mintFlagHex.toLowerCase()) || 
+						cleanOpReturn.includes(mintFlagHex.toUpperCase())) {
+						hasMintFlag = true;
+					}
+					
+					// 检查是否包含 "FT_TRANSFER" flag（如果通过 additionalInfo 添加）
+					const transferFlagHex = Buffer.from('FT_TRANSFER', 'utf8').toString('hex');
+					if (cleanOpReturn.includes(transferFlagHex.toLowerCase()) || 
+						cleanOpReturn.includes(transferFlagHex.toUpperCase())) {
 						return TransactionType.FT_TRANSFER;
-					case 'NFT_CREATE':
-						return TransactionType.NFT_CREATE;
-					case 'NFT_TRANSFER':
-						return TransactionType.NFT_TRANSFER;
-					case 'COLLECTION_CREATE':
-						return TransactionType.COLLECTION_CREATE;
+					}
 				}
 			}
-
-			// 如果没有 flag，尝试通过数据结构推断
-			if (jsonData.ft_data) {
-				return TransactionType.FT_MINT;
+			
+			// 检查 Code Script (satoshis = 500, 复杂脚本)
+			if (output.satoshis === 500 && asm.length > 100) {
+				hasCodeScript = true;
 			}
-			if (jsonData.ft_contract_address && jsonData.ft_amount !== undefined) {
-				return TransactionType.FT_TRANSFER;
-			}
-			if (jsonData.nft_data && jsonData.collection_id) {
-				return TransactionType.NFT_CREATE;
-			}
-			if (jsonData.nft_contract_address && jsonData.address) {
-				return TransactionType.NFT_TRANSFER;
-			}
-			if (jsonData.collection_data || (jsonData.collectionName && jsonData.supply !== undefined)) {
-				return TransactionType.COLLECTION_CREATE;
+			
+			// 检查 Tape Script (satoshis = 0, 包含 "FTape")
+			if (output.satoshis === 0 && (asm.includes('4654617065') || asm.includes('FTape'))) {
+				hasTapeScript = true;
 			}
 		} catch (error) {
 			console.error('Error identifying transaction type:', error);
 		}
 	}
 
+	// 检查输入脚本，判断是否存在 FT 解锁脚本（长度通常远大于普通 P2PKH）
+	for (const input of inputs) {
+		if (!input.script) continue;
+		try {
+			const script = new tbc.Script(input.script);
+			const length = script.toBuffer().length;
+			if (length > FT_UNLOCK_SCRIPT_MIN_LENGTH) {
+				hasFtUnlockInput = true;
+				break;
+			}
+		} catch (error) {
+			continue;
+		}
+	}
+	
+	// 优先判断 FT_MINT（必须有 flag）
+	if (hasMintFlag) {
+		return TransactionType.FT_MINT;
+	}
+	
+	// FT_TRANSFER：有 Code Script + Tape Script，但没有 mint flag
+	if (hasCodeScript && hasTapeScript) {
+		if (!hasFtUnlockInput) {
+			return TransactionType.FT_MINT;
+		}
+		return TransactionType.FT_TRANSFER;
+	}
+	
 	return TransactionType.UNKNOWN;
 }
 
 /**
- * 解析 FT/NFT 交易数据
+ * 解析 FT 交易数据
+ * 根据 FT 合约的实际结构来解析
  */
-export function parseFTNFTTransaction(
+export function parseFTTransaction(
 	outputs: any[],
 	transactionType: TransactionType,
-): ParsedFTNFTTransaction {
-	const result: ParsedFTNFTTransaction = {
+): ParsedFTTransaction {
+	const result: ParsedFTTransaction = {
 		type: transactionType,
 	};
 
-	// 查找包含 OP_RETURN 的输出
-	for (const output of outputs) {
-		if (!output.script) continue;
-
-		try {
-			const script = new tbc.Script(output.script);
-			const asm = script.toASM();
-
-			if (!asm.includes('OP_RETURN')) continue;
-
-			// 提取 OP_RETURN 数据
-			const opReturnData = extractOPReturnDataFromASM(asm);
-			if (!opReturnData) continue;
-
-			result.rawData = opReturnData;
-
-			// 解析 JSON 数据
-			const jsonData = extractJSONFromOPReturn(opReturnData);
-			if (!jsonData) {
-				result.error = 'Failed to parse OP_RETURN data as JSON';
-				return result;
-			}
-
-			// 根据交易类型解析数据
-			switch (transactionType) {
-				case TransactionType.FT_MINT:
-					if (jsonData.ft_data) {
-						// ft_data 可能是字符串（JSON）或对象
-						let ftData: any;
-						if (typeof jsonData.ft_data === 'string') {
-							try {
-								ftData = JSON.parse(jsonData.ft_data);
-							} catch (e) {
-								result.error = 'Failed to parse ft_data JSON';
+	try {
+		switch (transactionType) {
+			case TransactionType.FT_MINT:
+				// FT_MINT 交易结构：
+				// - Source 交易：包含 "for ft mint" flag 的 OP_RETURN 输出
+				// - Mint 交易：包含 Code Script 和 Tape Script 的输出
+				
+				// 查找 Tape Script 输出（包含 "FTape" 标识）
+				for (const output of outputs) {
+					if (!output.script) continue;
+					
+					try {
+						const script = new tbc.Script(output.script);
+						const asm = script.toASM();
+						
+						// 检查是否是 Tape Script（包含 "FTape"）
+						if (asm.includes('4654617065') || asm.includes('FTape')) {
+							const scriptHex = normalizeScriptHex(output.script);
+							const tapeData = parseTapeScript(scriptHex, asm, script);
+							
+							if (tapeData) {
+								result.data = tapeData;
+								// 不返回 rawData
 								return result;
 							}
-						} else {
-							ftData = jsonData.ft_data;
 						}
-
-						result.ftMintData = {
-							name: ftData.name || '',
-							symbol: ftData.symbol || '',
-							amount: ftData.amount || 0,
-							decimal: ftData.decimal || 6,
-						};
+					} catch (e) {
+						continue;
 					}
-					break;
+				}
+				
+				// 如果没有找到 Tape Script，尝试从 OP_RETURN 中提取
+				for (const output of outputs) {
+					if (!output.script) continue;
+					
+					try {
+						const script = new tbc.Script(output.script);
+						const asm = script.toASM();
+						
+						if (!asm.includes('OP_RETURN')) continue;
+						
+						const opReturnData = extractOPReturnDataFromASM(asm);
+						if (!opReturnData) continue;
+						
+						// 检查是否包含 "for ft mint" flag
+						const mintFlagHex = Buffer.from('for ft mint', 'utf8').toString('hex');
+						const cleanOpReturn = opReturnData.replace(/\s+/g, '');
+						
+						if (cleanOpReturn.includes(mintFlagHex.toLowerCase()) || cleanOpReturn.includes(mintFlagHex.toUpperCase())) {
+							// 对于 Source 交易，可能没有完整的 Tape Script，返回基本信息
+							result.data = {
+								name: 'Unknown',
+								symbol: 'UNK',
+								amount: 0,
+								decimal: 6,
+							};
+							// 不返回 rawData
+							return result;
+						}
+					} catch (e) {
+						continue;
+					}
+				}
+				
+				result.error = 'Failed to parse FT_MINT transaction: Tape Script not found';
+				break;
 
-				case TransactionType.FT_TRANSFER:
-					result.ftTransferData = {
-						ft_contract_address: jsonData.ft_contract_address || '',
-						ft_amount: jsonData.ft_amount || 0,
-						address: jsonData.address || '',
-						tbc_amount: jsonData.tbc_amount,
+			case TransactionType.FT_TRANSFER:
+				// FT_TRANSFER 交易结构：
+				// - 输入：FT UTXO(s) + TBC UTXO(s)
+				// - 输出1：接收者的 Code Script（包含接收地址）
+				// - 输出2：接收者的 Tape Script（包含转移金额）
+				// - 输出3（可选）：发送者的 Code Script（找零）
+				// - 输出4（可选）：发送者的 Tape Script（找零余额）
+				// - 输出5（可选）：额外的 OP_RETURN（如果使用 transferWithAdditionalInfo）
+				
+				// 查找接收者的 Code Script 和 Tape Script
+				// Code Script 通常 satoshis = 500
+				// Tape Script 通常 satoshis = 0 且包含 "FTape"
+				
+				let recipientCodeScript: any = null;
+				let recipientTapeScript: any = null;
+				
+				for (const output of outputs) {
+					if (!output.script) continue;
+					
+					try {
+						const script = new tbc.Script(output.script);
+						const asm = script.toASM();
+						
+						// 查找 Tape Script（satoshis = 0 且包含 "FTape"）
+						if (output.satoshis === 0 && (asm.includes('4654617065') || asm.includes('FTape'))) {
+							recipientTapeScript = output;
+						}
+						
+						// 查找 Code Script（satoshis = 500 且是复杂脚本）
+						if (output.satoshis === 500 && asm.length > 100) {
+							recipientCodeScript = output;
+						}
+					} catch (e) {
+						continue;
+					}
+				}
+				
+				// 从 Code Script 提取接收地址
+				let recipientAddress: string | null = null;
+				if (recipientCodeScript) {
+					const codeScriptHex = normalizeScriptHex(recipientCodeScript.script);
+					recipientAddress = extractAddressFromCodeScript(codeScriptHex);
+				}
+				
+				// 从 Tape Script 提取转移金额
+				let ftAmount = 0;
+				let decimal = 6; // 默认 decimal
+				if (recipientTapeScript) {
+					const tapeScriptHex = normalizeScriptHex(recipientTapeScript.script);
+					const script = new tbc.Script(recipientTapeScript.script);
+					const asm = script.toASM();
+					
+				// 尝试从 Tape Script 解析 decimal
+				const parts = asm.split(/\s+/);
+				if (parts.length >= 4 && parts[0] === '0' && parts[1] === 'OP_RETURN') {
+					const decimalHex = parts[3];
+					if (decimalHex) {
+						const parsedDecimal = parseInt(decimalHex, 16);
+						if (!isNaN(parsedDecimal)) {
+							decimal = parsedDecimal;
+						}
+					}
+				}
+					
+					const balance = getBalanceFromTape(tapeScriptHex);
+					// 转换为实际数量（考虑 decimal）
+					ftAmount = formatAmount(balance, decimal);
+				}
+				
+				// 检查是否有额外的 OP_RETURN（包含 FT_TRANSFER 信息）
+				for (const output of outputs) {
+					if (!output.script) continue;
+					
+					try {
+						const script = new tbc.Script(output.script);
+						const asm = script.toASM();
+						
+						if (!asm.includes('OP_RETURN')) continue;
+						
+						const opReturnData = extractOPReturnDataFromASM(asm);
+						if (!opReturnData) continue;
+						
+						// 尝试解析为 JSON（如果使用 transferWithAdditionalInfo）
+						try {
+							const cleanHex = opReturnData.replace(/\s+/g, '');
+							const text = hexToString(cleanHex);
+							
+							if (text.trim().startsWith('{')) {
+								const jsonData = JSON.parse(text);
+								if (jsonData.flag === 'FT_TRANSFER') {
+									result.data = {
+										address: jsonData.address || recipientAddress || '',
+										ft_amount: jsonData.ft_amount || ftAmount,
+										ft_contract_address: jsonData.ft_contract_address,
+									};
+									// 不返回 rawData
+									return result;
+								}
+							}
+						} catch (e) {
+							// 不是 JSON，继续
+						}
+					} catch (e) {
+						continue;
+					}
+				}
+				
+				// 如果没有找到 JSON 数据，使用从脚本中提取的信息
+				if (recipientAddress || ftAmount > 0) {
+					result.data = {
+						address: recipientAddress || '',
+						ft_amount: ftAmount,
 					};
-					break;
+					return result;
+				}
+				
+				result.error = 'Failed to parse FT_TRANSFER transaction: Code Script or Tape Script not found';
+				break;
 
-				case TransactionType.NFT_CREATE:
-					if (jsonData.nft_data) {
-						// nft_data 可能是字符串（JSON）或对象
-						let nftData: any;
-						if (typeof jsonData.nft_data === 'string') {
-							try {
-								nftData = JSON.parse(jsonData.nft_data);
-							} catch (e) {
-								result.error = 'Failed to parse nft_data JSON';
-								return result;
-							}
-						} else {
-							nftData = jsonData.nft_data;
-						}
-
-						result.nftCreateData = {
-							nftName: nftData.nftName || nftData.name || '',
-							description: nftData.description || '',
-							file: nftData.file || '',
-							symbol: nftData.symbol,
-							attributes: nftData.attributes,
-							collection_id: jsonData.collection_id || '',
-						};
-					}
-					break;
-
-				case TransactionType.NFT_TRANSFER:
-					result.nftTransferData = {
-						nft_contract_address: jsonData.nft_contract_address || '',
-						address: jsonData.address || '',
-					};
-					break;
-
-				case TransactionType.COLLECTION_CREATE:
-					if (jsonData.collection_data) {
-						// collection_data 可能是字符串（JSON）或对象
-						let collectionData: any;
-						if (typeof jsonData.collection_data === 'string') {
-							try {
-								collectionData = JSON.parse(jsonData.collection_data);
-							} catch (e) {
-								result.error = 'Failed to parse collection_data JSON';
-								return result;
-							}
-						} else {
-							collectionData = jsonData.collection_data;
-						}
-
-						result.collectionCreateData = {
-							collectionName: collectionData.collectionName || '',
-							description: collectionData.description || '',
-							supply: collectionData.supply || 0,
-							file: collectionData.file || '',
-						};
-					}
-					break;
-			}
-
-			// 找到第一个有效的 OP_RETURN 就返回
-			if (result.ftMintData || result.ftTransferData || result.nftCreateData || 
-				result.nftTransferData || result.collectionCreateData) {
-				return result;
-			}
-		} catch (error) {
-			console.error('Error parsing FT/NFT transaction:', error);
-			result.error = error instanceof Error ? error.message : 'Unknown error';
+			default:
+				result.error = `Unknown transaction type: ${transactionType}`;
 		}
-	}
-
-	if (!result.error) {
-		result.error = 'No valid FT/NFT data found in outputs';
+	} catch (error) {
+		console.error('Error parsing FT transaction:', error);
+		result.error = error instanceof Error ? error.message : 'Unknown error';
 	}
 
 	return result;
 }
-
-/**
- * 从交易输出中提取接收地址（用于转移交易）
- * 查找 P2PKH 输出，这些通常是接收地址
- */
-export function extractRecipientAddresses(outputs: any[]): string[] {
-	const addresses: string[] = [];
-
-	for (const output of outputs) {
-		if (!output.script) continue;
-
-		try {
-			const script = new tbc.Script(output.script);
-			
-			// 检查是否是 P2PKH 输出
-			if (script.isPublicKeyHashOut()) {
-				try {
-					const pubKeyHash = script.getPublicKeyHash();
-					const address = new tbc.Address(pubKeyHash, tbc.Networks.livenet).toString();
-					addresses.push(address);
-				} catch (error) {
-					console.error('Failed to extract address from P2PKH:', error);
-				}
-			}
-		} catch (error) {
-			console.error('Error extracting recipient address:', error);
-		}
-	}
-
-	return addresses;
-}
-

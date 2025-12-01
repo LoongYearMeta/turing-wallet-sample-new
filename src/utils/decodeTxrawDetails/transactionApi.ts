@@ -20,6 +20,7 @@ export async function getTransactionByTxid(txid: string): Promise<string | null>
 		const response = await fetch(`${apiBaseUrl}/api/tbc/txraw/txid/${txid}`, {
 			method: 'GET',
 		});
+		console.log('response', response);
 
 		if (response.ok) {
 			const payload = await response.json();

@@ -5,13 +5,11 @@
 
 import * as tbc from 'tbc-lib-js';
 import type { InputUTXODetail, TransactionDetail, DecodedInput, DecodedOutput } from './types';
-import { ScriptType } from './types';
 import { parseScript } from './scriptParser';
 import { getTransactionByTxid } from './transactionApi';
 import {
 	identifyTransactionType,
-	parseFTNFTTransaction,
-	extractRecipientAddresses,
+	parseFTTransaction,
 	TransactionType,
 } from './ftNftParser';
 
@@ -31,7 +29,7 @@ export async function parseInputUTXO(
 				outputIndex,
 				script: {
 					asm: '',
-					type: ScriptType.UNKNOWN,
+					// type 字段只在 P2PKH 时显示
 				},
 				error: `Failed to fetch transaction ${txid}`,
 			};
@@ -48,7 +46,7 @@ export async function parseInputUTXO(
 				outputIndex,
 				script: {
 					asm: '',
-					type: ScriptType.UNKNOWN,
+					// type 字段只在 P2PKH 时显示
 				},
 				error: `Output index ${outputIndex} out of range`,
 			};
@@ -74,7 +72,7 @@ export async function parseInputUTXO(
 			outputIndex,
 			script: {
 				asm: '',
-				type: ScriptType.UNKNOWN,
+				// type 字段只在 P2PKH 时显示
 			},
 			error: error instanceof Error ? error.message : 'Unknown error',
 		};
@@ -139,31 +137,46 @@ export async function decodeTxRawDetail(txraw: string): Promise<TransactionDetai
 			};
 		});
 
-		// 识别并解析 FT/NFT 交易
-		let ftNftInfo;
+		// 识别并解析 FT 交易
+		let ftData;
+		let transactionType: TransactionType | undefined;
 		try {
-			const transactionType = identifyTransactionType(txObj.outputs);
+			transactionType = identifyTransactionType(txObj);
 			if (transactionType !== TransactionType.UNKNOWN) {
-				ftNftInfo = parseFTNFTTransaction(txObj.outputs, transactionType);
-				
-				// 对于转移交易，补充接收地址信息
-				if (transactionType === TransactionType.FT_TRANSFER && ftNftInfo.ftTransferData) {
-					const recipientAddresses = extractRecipientAddresses(txObj.outputs);
-					// 如果解析出的地址为空，使用提取的地址
-					if (!ftNftInfo.ftTransferData.address && recipientAddresses.length > 0) {
-						ftNftInfo.ftTransferData.address = recipientAddresses[0];
-					}
-				} else if (transactionType === TransactionType.NFT_TRANSFER && ftNftInfo.nftTransferData) {
-					const recipientAddresses = extractRecipientAddresses(txObj.outputs);
-					// 如果解析出的地址为空，使用提取的地址
-					if (!ftNftInfo.nftTransferData.address && recipientAddresses.length > 0) {
-						ftNftInfo.nftTransferData.address = recipientAddresses[0];
-					}
-				}
+				ftData = parseFTTransaction(txObj.outputs, transactionType);
 			}
 		} catch (error) {
-			console.error('Failed to parse FT/NFT transaction:', error);
+			console.error('Failed to parse FT transaction:', error);
 			// 不抛出错误，继续返回基本交易信息
+		}
+
+		if (transactionType && transactionType !== TransactionType.UNKNOWN) {
+			outputs.forEach((output) => {
+				if (output.script?.data?.ft_data) {
+					output.script.data.ft_data.type = transactionType;
+				}
+			});
+		}
+
+		if (transactionType === TransactionType.FT_MINT) {
+			const tapeOutput = outputs.find((output) => output.script?.data?.ft_data);
+			const tapeFtData = tapeOutput?.script.data?.ft_data;
+			if (tapeFtData?.data) {
+				const amountValue = Number(tapeFtData.data.amount);
+				ftData = {
+					type: TransactionType.FT_MINT,
+					data: {
+						name: tapeFtData.data.name,
+						symbol: tapeFtData.data.symbol,
+						amount: Number.isFinite(amountValue) ? amountValue : 0,
+						decimal: tapeFtData.data.decimal,
+					},
+				};
+			}
+		}
+
+		if (transactionType === TransactionType.FT_TRANSFER && ftData?.type === TransactionType.FT_MINT) {
+			ftData.type = TransactionType.FT_TRANSFER;
 		}
 
 		// 返回交易详细信息
@@ -173,7 +186,7 @@ export async function decodeTxRawDetail(txraw: string): Promise<TransactionDetai
 			inputs,
 			outputs,
 			nLockTime: txObj.nLockTime,
-			ftNftInfo,
+			ft_data: ftData,
 		};
 	} catch (error) {
 		console.error('Failed to decode transaction detail:', error);
@@ -193,12 +206,9 @@ export type {
 export { identifyScriptTypeByASM, extractPubKeyHashFromASM, extractOPReturnDataFromASM } from './scriptIdentifier';
 export { parseScript } from './scriptParser';
 export { getTransactionByTxid } from './transactionApi';
-export { identifyTransactionType, parseFTNFTTransaction, extractRecipientAddresses, TransactionType } from './ftNftParser';
+export { identifyTransactionType, parseFTTransaction, TransactionType } from './ftNftParser';
 export type {
-	ParsedFTNFTTransaction,
+	ParsedFTTransaction,
 	FTMintData,
 	FTTransferData,
-	NFTCreateData,
-	NFTTransferData,
-	CollectionCreateData,
 } from './ftNftParser';

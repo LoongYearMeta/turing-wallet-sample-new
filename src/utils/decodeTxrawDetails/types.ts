@@ -2,15 +2,12 @@
  * 交易解码相关的类型定义
  */
 
-// 导入 FT/NFT 相关类型
+// 导入 FT 相关类型
 import type {
-	ParsedFTNFTTransaction,
+	ParsedFTTransaction,
 	TransactionType,
 	FTMintData,
 	FTTransferData,
-	NFTCreateData,
-	NFTTransferData,
-	CollectionCreateData,
 } from './ftNftParser';
 
 /**
@@ -29,11 +26,20 @@ export type ScriptType = typeof ScriptType[keyof typeof ScriptType];
 /**
  * 脚本详细信息
  */
+export interface ScriptOpReturnData {
+	type?: string;
+	publicKeyHash?: string;
+	codeType?: string;
+	ft_data?: ParsedFTTransaction;
+	hexParts?: string[];
+	asciiParts?: string[];
+}
+
 export interface ScriptDetail {
 	asm: string; // ASM格式
-	type: ScriptType; // 脚本类型
+	type?: ScriptType; // 脚本类型（仅当类型为P2PKH时显示）
 	address?: string; // 地址（如果是P2PKH等）
-	data?: string; // OP_RETURN数据
+	data?: ScriptOpReturnData; // OP_RETURN数据
 }
 
 /**
@@ -77,17 +83,14 @@ export interface TransactionDetail {
 	inputs: DecodedInput[];
 	outputs: DecodedOutput[];
 	nLockTime: number;
-	ftNftInfo?: ParsedFTNFTTransaction; // FT/NFT 交易信息
+	ft_data?: ParsedFTTransaction; // FT 交易信息
 }
 
 // 重新导出类型供外部使用
 export type {
-	ParsedFTNFTTransaction,
+	ParsedFTTransaction,
 	TransactionType,
 	FTMintData,
 	FTTransferData,
-	NFTCreateData,
-	NFTTransferData,
-	CollectionCreateData,
 };
 

@@ -42,6 +42,7 @@
 				:readonly="false"
 				:copyable="true"
 				:deletable="true"
+				:max-height="300"
 			/>
 			<!-- </div> -->
 			<div class="form-item-btn-container">
@@ -116,6 +117,7 @@
 				:readonly="false"
 				:copyable="true"
 				:deletable="true"
+				:max-height="500"
 			/>
 		</div>
 	</div>

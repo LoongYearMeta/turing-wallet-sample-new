@@ -66,8 +66,8 @@ const props = defineProps<{
 	deletable?: boolean;
 	// 最大输入长度
 	maxLength?: number;
-	// 最大高度（仅支持：'none'/'auto'/'数字px'，如 '100px'）
-	maxHeight?: 'none' | 'auto' | `${number}px`;
+	// 最大高度（支持数字或字符串，如 300 或 '300px'）
+	maxHeight?: number | 'none' | 'auto' | `${number}px`;
 }>();
 
 // 2. 定义事件（支持双向绑定、状态回调）
@@ -117,7 +117,8 @@ const calculateHeight = () => {
 	textareaRef.value.style.height = `${baseHeight}px`;
 
 	// 步骤4：处理最大高度限制（仅当maxHeight为'数字px'时生效）
-	const currentMaxHeight = props.maxHeight ?? 'none';
+	const currentMaxHeight =
+		typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight ?? 'none';
 	if (currentMaxHeight !== 'none' && currentMaxHeight !== 'auto') {
 		// 提取maxHeight中的数字（如 '200px' → 200）
 		const heightMatch = currentMaxHeight.match(/^(\d+)px$/);
@@ -229,7 +230,7 @@ onUnmounted(() => {
 	border: 1px solid var(--form-border-color);
 	border-radius: var(--radius-sm);
 	background-color: var(--form-item-bg-color);
-	overflow: hidden;
+	overflow: visible;
 }
 
 /* 操作按钮包装器 */
