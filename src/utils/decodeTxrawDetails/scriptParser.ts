@@ -337,7 +337,7 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 
 	// 其他情况保留 hex/ASCII 以便调试
 	// 过滤掉不可读的 ASCII（包含太多 '.' 的）
-	const filteredAsciiParts = asciiParts.map((ascii, index) => {
+	const filteredAsciiParts = asciiParts.map((ascii) => {
 		if (!ascii || ascii.length === 0) return '';
 		const dotCount = (ascii.match(/\./g) || []).length;
 		const readableRatio = (ascii.length - dotCount) / ascii.length;
