@@ -212,3 +212,10 @@ export type {
 	FTMintData,
 	FTTransferData,
 } from './ftNftParser';
+export {
+	getMultiSigAddress,
+	getSignatureAndPublicKeyCount,
+	getMultiSigLockScript,
+	getCombineHash,
+	parseMultiSigAddressFromASM,
+} from './multiSig';

@@ -17,6 +17,7 @@ export const ScriptType = {
 	P2PKH: 'P2PKH', // Pay to Public Key Hash
 	P2PK: 'P2PK', // Pay to Public Key
 	P2SH: 'P2SH', // Pay to Script Hash
+	MULTISIG: 'MULTISIG', // Multi-signature
 	OP_RETURN: 'OP_RETURN', // OP_RETURN data
 	UNKNOWN: 'UNKNOWN', // 未知类型
 } as const;

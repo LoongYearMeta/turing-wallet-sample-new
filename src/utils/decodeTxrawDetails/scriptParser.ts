@@ -7,6 +7,7 @@ import * as tbc from 'tbc-lib-js';
 import { ScriptType } from './types';
 import type { ScriptDetail, ScriptOpReturnData } from './types';
 import { TransactionType } from './ftNftParser';
+import { parseMultiSigAddressFromASM } from './multiSig';
 
 const PRINTABLE_ASCII_MIN = 32;
 const PRINTABLE_ASCII_MAX = 126;
@@ -343,6 +344,22 @@ export function parseScript(scriptHex: string): ScriptDetail {
 				};
 			} catch (error) {
 				console.error('Failed to extract address from P2PK script:', error);
+			}
+		}
+
+		// 检查是否是多签脚本
+		if (asm.includes('OP_CHECKMULTISIG')) {
+			try {
+				const multiSigAddress = parseMultiSigAddressFromASM(asm);
+				if (multiSigAddress) {
+					return {
+						asm,
+						type: ScriptType.MULTISIG,
+						address: multiSigAddress,
+					};
+				}
+			} catch (error) {
+				console.error('Failed to extract address from MultiSig script:', error);
 			}
 		}
 
