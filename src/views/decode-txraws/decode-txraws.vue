@@ -31,7 +31,30 @@
 					</svg>
 					<span>Txraw Form</span>
 				</div>
-				<p class="msg-form-description">Enter the txraw you want to decode</p>
+				<div class="header-actions">
+					<!-- 网络选择器 -->
+					<div class="network-selector">
+						<label class="network-option" :class="{ active: selectedNetwork === 'mainnet' }">
+							<input
+								type="radio"
+								value="mainnet"
+								v-model="selectedNetwork"
+								@change="handleNetworkChange"
+							/>
+							<span>mainnet</span>
+						</label>
+						<label class="network-option" :class="{ active: selectedNetwork === 'testnet' }">
+							<input
+								type="radio"
+								value="testnet"
+								v-model="selectedNetwork"
+								@change="handleNetworkChange"
+							/>
+							<span>testnet</span>
+						</label>
+					</div>
+					<!-- <p class="msg-form-description">Enter the txraw you want to decode</p> -->
+				</div>
 			</div>
 			<!-- txraw input textarea -->
 			<!-- <div class="form-item"> -->
@@ -57,37 +80,6 @@
 				</button>
 			</div>
 		</form>
-		<!-- result -->
-		<!-- <div class="msg-form msg-result">
-			<div class="msg-form-header">
-				<div class="msg-form-title">
-					<svg
-						t="1762506088732"
-						class="icon"
-						viewBox="0 0 1024 1024"
-						version="1.1"
-						xmlns="http://www.w3.org/2000/svg"
-						p-id="21589"
-						width="28"
-						height="28"
-					>
-						<path
-							d="M464.896 134.912c78.848-71.5776 200.192-86.4768 297.5232-36.352 98.5088 50.7904 152.6272 151.4496 137.4208 255.6416-23.04 156.3136-169.3184 247.9616-329.0112 204.7488-25.0368-6.7584-42.2912-3.7376-58.0608 17.2032-18.8928 25.088-41.216 47.9232-62.8736 72.704 9.3184 8.704 16.64 15.1552 23.552 21.8112 33.3824 32.5632 37.5296 70.2464 11.0592 101.0688-25.7536 30.0032-66.56 33.1264-104.8576 7.3216-16.1792-11.0592-32-29.2864-44.544 2.6624 51.0976 58.0608 59.392 90.6752 31.6928 123.1872-29.2864 34.2528-65.536 31.5904-133.8368-10.752-3.6864 2.2528-8.0384 4.4544-12.032 7.2192-41.984 28.672-76.8 28.416-104.2432-1.024-28.4672-30.464-27.8528-68.608 4.3008-105.0624a23307.264 23307.264 0 0 1 276.736-310.1696c20.736-22.6816 22.528-39.7824 9.0112-66.9184C359.2192 322.2528 384 208.4864 464.896 134.912z m193.4336 71.168c-70.0416-9.9328-134.656 36.9152-144.384 104.7552-10.2912 70.4512 38.8608 138.2912 107.2128 148.5824 70.656 10.6496 135.0656-37.5808 145.664-109.056 10.7008-73.3696-34.56-133.4272-108.544-144.2304z"
-							fill="#ff8c01"
-							p-id="21590"
-						></path>
-					</svg>
-					<span>Txraw Decoded Result</span>
-				</div>
-			</div>
-			<MyTextarea
-				v-model="decodedTxraw"
-				placeholder="Txraw decoded result will be displayed here"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
-			/>
-		</div> -->
 		<!-- txraw detail -->
 		<div class="msg-form msg-result">
 			<div class="msg-form-header">
@@ -110,6 +102,8 @@
 					</svg>
 					<span>Txraw Detailed Result</span>
 				</div>
+
+				<!-- View ASM 按钮 -->
 				<button
 					v-if="rawDecodedData"
 					@click="toggleShowAsm"
@@ -119,6 +113,7 @@
 				>
 					{{ showAsm ? 'Hide ASM' : 'View ASM' }}
 				</button>
+				<!-- </div> -->
 			</div>
 			<MyTextarea
 				v-model="decodedTxrawDetail"
@@ -157,6 +152,7 @@ const decodedTxraw = ref('');
 const decodedTxrawDetail = ref('');
 const showAsm = ref(false); // 控制是否显示 ASM
 const rawDecodedData = ref<any>(null); // 保存原始解码数据（包含 asm）
+const selectedNetwork = ref<'mainnet' | 'testnet'>('mainnet'); // 选中的网络类型
 
 // DECODE TXRAW
 const handleDecodeTxraws = async () => {
@@ -165,9 +161,9 @@ const handleDecodeTxraws = async () => {
 		toastApi.showError('Please enter a txraw to decode', 3000);
 		return;
 	}
-	
+
 	isSubmitting.value = true;
-	
+
 	try {
 		// 从txraw中创建transaction对象
 		const transaction = new tbc.Transaction(txraw.value);
@@ -175,19 +171,17 @@ const handleDecodeTxraws = async () => {
 		const response = transaction.toObject();
 		// 将JSON对象转换为字符串，显示解码后的交易数据
 		decodedTxraw.value = JSON.stringify(response, null, 2);
-		
+
 		// 解码详细信息（异步，不阻塞基本解码）
 		decodedTxrawDetail.value = 'Decoding detailed information...';
 		showAsm.value = false; // 重置 ASM 显示状态
 		rawDecodedData.value = null; // 清空原始数据
 		try {
-			const detailResponse = await decodeTxRawDetail(txraw.value);
+			const detailResponse = await decodeTxRawDetail(txraw.value, selectedNetwork.value);
 			// 保存原始数据（包含 asm）
 			rawDecodedData.value = detailResponse;
 			// 根据 showAsm 状态决定是否包含 asm 字段
-			const responseToDisplay = showAsm.value 
-				? detailResponse 
-				: removeAsmFields(detailResponse);
+			const responseToDisplay = showAsm.value ? detailResponse : removeAsmFields(detailResponse);
 			decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 		} catch (detailError) {
 			console.error('Decode txraw detail error:', detailError);
@@ -196,7 +190,7 @@ const handleDecodeTxraws = async () => {
 			}`;
 			rawDecodedData.value = null;
 		}
-		
+
 		// 显示成功提示
 		toastApi.showSuccess('Txraw decoded successfully', 3000);
 		// 清空txraw输入框
@@ -215,11 +209,11 @@ const handleDecodeTxraws = async () => {
 // 切换 ASM 显示状态
 const toggleShowAsm = () => {
 	showAsm.value = !showAsm.value;
-	
+
 	// 如果有原始数据，根据新的 showAsm 状态重新格式化显示
 	if (rawDecodedData.value) {
-		const responseToDisplay = showAsm.value 
-			? rawDecodedData.value 
+		const responseToDisplay = showAsm.value
+			? rawDecodedData.value
 			: removeAsmFields(rawDecodedData.value);
 		decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 	}
@@ -230,11 +224,11 @@ const removeAsmFields = (obj: any): any => {
 	if (obj === null || obj === undefined) {
 		return obj;
 	}
-	
+
 	if (Array.isArray(obj)) {
-		return obj.map(item => removeAsmFields(item));
+		return obj.map((item) => removeAsmFields(item));
 	}
-	
+
 	if (typeof obj === 'object') {
 		const result: any = {};
 		for (const key in obj) {
@@ -244,8 +238,17 @@ const removeAsmFields = (obj: any): any => {
 		}
 		return result;
 	}
-	
+
 	return obj;
+};
+
+// 处理网络切换
+const handleNetworkChange = () => {
+	// 如果已有解码数据，重新解码以使用新的网络参数
+	if (txraw.value && rawDecodedData.value) {
+		// 可以在这里触发重新解码，或者只是更新状态
+		// 为了更好的用户体验，我们不清空数据，只在下次解码时使用新网络
+	}
 };
 
 // 检查钱包连接状态
@@ -262,6 +265,58 @@ onMounted(async () => {
 	justify-content: space-between;
 	align-items: center;
 	gap: var(--spacing-md);
+}
+
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	flex-wrap: wrap;
+}
+
+.network-selector {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	background-color: var(--form-item-bg-color);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-sm);
+	padding: 2px;
+}
+
+.network-option {
+	display: flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: calc(var(--radius-sm) - 2px);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+	font-size: var(--font-size-small);
+	color: var(--color-text-secondary);
+	position: relative;
+}
+
+.network-option input[type='radio'] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.network-option span {
+	pointer-events: none;
+}
+
+.network-option:hover {
+	color: var(--color-text-primary);
+	background-color: var(--form-item-bg-hover-color);
+}
+
+.network-option.active {
+	color: var(--color-text-primary);
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
 }
 
 .view-asm-btn {
@@ -299,13 +354,28 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
 	.msg-form-header {
-		flex-direction: column;
 		align-items: flex-start;
 		gap: var(--spacing-xs);
 	}
-	
+
+	.header-actions {
+		justify-content: space-between;
+	}
+
+	.network-selector {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.network-option {
+		flex: 1;
+		justify-content: center;
+		padding: 4px 8px;
+		font-size: var(--font-size-tiny);
+	}
+
 	.view-asm-btn {
-		align-self: flex-end;
+		flex-shrink: 0;
 	}
 }
 </style>

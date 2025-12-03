@@ -244,6 +244,7 @@ const handleSendP2PKH = async () => {
 				flag: 'P2PKH',
 				address: address.value.trim(),
 				satoshis: Number(satoshis.value.trim()),
+				broadcastEnabled: broadcastEnabled.value
 			},
 		];
 

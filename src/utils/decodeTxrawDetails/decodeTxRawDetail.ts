@@ -15,15 +15,54 @@ import {
 
 /**
  * 解析输入UTXO的详细信息
+ * @param txid 交易ID
+ * @param outputIndex 输出索引
+ * @param network 网络类型，可选：'mainnet' | 'testnet'
  */
 export async function parseInputUTXO(
 	txid: string,
 	outputIndex: number,
+	network?: 'mainnet' | 'testnet',
 ): Promise<InputUTXODetail> {
 	try {
 		// 获取前一个交易的原始数据
-		const prevTxraw = await getTransactionByTxid(txid);
-		if (!prevTxraw) {
+		const apiResult = await getTransactionByTxid(txid, network);
+		
+		if (!apiResult.success) {
+			// 如果不是网络错误，返回具体的错误信息
+			if (!apiResult.isNetworkError) {
+				// 检查是否是"不存在的utxo"类型的错误（如404）
+				const errorLower = apiResult.error.toLowerCase();
+				const isNotFoundError = 
+					errorLower.includes('not found') || 
+					errorLower.includes('不存在') ||
+					errorLower.includes('tx not found') ||
+					errorLower.includes('transaction not found') ||
+					errorLower.includes('404');
+				
+				if (isNotFoundError) {
+					return {
+						txid,
+						outputIndex,
+						script: {
+							asm: '',
+							// type 字段只在 P2PKH 时显示
+						},
+						error: '不存在的utxo',
+					};
+				}
+				// 其他业务错误，返回原始错误信息
+				return {
+					txid,
+					outputIndex,
+					script: {
+						asm: '',
+						// type 字段只在 P2PKH 时显示
+					},
+					error: apiResult.error,
+				};
+			}
+			// 网络错误
 			return {
 				txid,
 				outputIndex,
@@ -31,9 +70,11 @@ export async function parseInputUTXO(
 					asm: '',
 					// type 字段只在 P2PKH 时显示
 				},
-				error: `Failed to fetch transaction ${txid}`,
+				error: `网络错误: ${apiResult.error}`,
 			};
 		}
+		
+		const prevTxraw = apiResult.txraw;
 
 		// 解析前一个交易
 		const prevTransaction = new tbc.Transaction(prevTxraw);
@@ -90,9 +131,13 @@ export async function parseInputUTXO(
  * 5. 返回完整的交易详细信息
  * 
  * @param txraw 交易的十六进制原始数据
+ * @param network 网络类型，可选：'mainnet' | 'testnet'
  * @returns 交易详细信息对象
  */
-export async function decodeTxRawDetail(txraw: string): Promise<TransactionDetail> {
+export async function decodeTxRawDetail(
+	txraw: string,
+	network?: 'mainnet' | 'testnet',
+): Promise<TransactionDetail> {
 	try {
 		// 解析交易
 		const transaction = new tbc.Transaction(txraw);
@@ -104,7 +149,7 @@ export async function decodeTxRawDetail(txraw: string): Promise<TransactionDetai
 
 				let utxoDetail: InputUTXODetail | undefined;
 				try {
-					utxoDetail = await parseInputUTXO(input.prevTxId, input.outputIndex);
+					utxoDetail = await parseInputUTXO(input.prevTxId, input.outputIndex, network);
 				} catch (error) {
 					console.error(
 						`Failed to parse UTXO for input ${input.prevTxId}:${input.outputIndex}:`,
