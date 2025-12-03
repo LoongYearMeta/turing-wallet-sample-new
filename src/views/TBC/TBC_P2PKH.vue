@@ -238,13 +238,12 @@ const handleSendP2PKH = async () => {
 	isSubmitting.value = true;
 
 	try {
-		// 构建提交参数，格式：{ flag: string; [key: string]: string | number }[]
+		// 构建提交参数，格式：{ flag: string; [key: string]: string | number | boolean }[]
 		const result: { flag: string; [key: string]: string | number | boolean }[] = [
 			{
 				flag: 'P2PKH',
 				address: address.value.trim(),
 				satoshis: Number(satoshis.value.trim()),
-				broadcastEnabled: broadcastEnabled.value
 			},
 		];
 
