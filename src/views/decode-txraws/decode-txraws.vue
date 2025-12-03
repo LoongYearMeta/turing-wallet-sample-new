@@ -152,7 +152,7 @@ const decodedTxraw = ref('');
 const decodedTxrawDetail = ref('');
 const showAsm = ref(false); // 控制是否显示 ASM
 const rawDecodedData = ref<any>(null); // 保存原始解码数据（包含 asm）
-const selectedNetwork = ref<'mainnet' | 'testnet'>('mainnet'); // 选中的网络类型
+const selectedNetwork = ref<'mainnet' | 'testnet'>('testnet'); // 选中的网络类型
 
 // DECODE TXRAW
 const handleDecodeTxraws = async () => {

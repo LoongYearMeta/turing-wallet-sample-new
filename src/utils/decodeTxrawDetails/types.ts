@@ -2,13 +2,7 @@
  * 交易解码相关的类型定义
  */
 
-// 导入 FT 相关类型
-import type {
-	ParsedFTTransaction,
-	TransactionType,
-	FTMintData,
-	FTTransferData,
-} from './ftNftParser';
+// （已简化）不再直接依赖具体协议的解析类型，脚本解析仅返回原始数据
 
 /**
  * 脚本类型
@@ -33,7 +27,16 @@ export interface ScriptOpReturnData {
 	hash?: string; // 哈希值（当 flag 为 01 时）
 	flag?: 'address' | 'hash' | 'unknown'; // 标志类型：00=address, 01=hash
 	codeType?: string;
-	ft_data?: ParsedFTTransaction;
+	/**
+	 * 通用 FT Tape 解码结果（不绑定具体交易类型）
+	 * 仅当 OP_RETURN 数据符合 FT Tape 格式时才会出现
+	 */
+	ftTape?: {
+		name: string;
+		symbol: string;
+		amount: number;
+		decimal: number;
+	};
 	hexParts?: string[];
 	asciiParts?: string[];
 }
@@ -43,6 +46,13 @@ export interface ScriptDetail {
 	type?: ScriptType; // 脚本类型（仅当类型为P2PKH时显示）
 	address?: string; // 地址（如果是P2PKH等）
 	data?: ScriptOpReturnData; // OP_RETURN数据
+	/**
+	 * 对于包含源 UTXO 信息的合约脚本（如 FT Code Script），解析出的来源 UTXO
+	 */
+	originUtxo?: {
+		txid: string;
+		vout: number;
+	};
 }
 
 /**
@@ -86,14 +96,4 @@ export interface TransactionDetail {
 	inputs: DecodedInput[];
 	outputs: DecodedOutput[];
 	nLockTime: number;
-	ft_data?: ParsedFTTransaction; // FT 交易信息
 }
-
-// 重新导出类型供外部使用
-export type {
-	ParsedFTTransaction,
-	TransactionType,
-	FTMintData,
-	FTTransferData,
-};
-

@@ -6,69 +6,28 @@
 import * as tbc from 'tbc-lib-js';
 import { ScriptType } from './types';
 import type { ScriptDetail, ScriptOpReturnData } from './types';
-import { TransactionType } from './ftNftParser';
 
 const PRINTABLE_ASCII_MIN = 32;
 const PRINTABLE_ASCII_MAX = 126;
 
-function safeFormatAmount(value: bigint, decimal: number): string {
-	const safeDecimal = Math.min(Math.max(Number.isFinite(decimal) ? Math.floor(decimal) : 0, 0), 18);
-	if (safeDecimal === 0) {
-		return value.toString();
-	}
+/**
+ * 安全格式化金额：value 以最小单位计数，decimal 为小数位数
+ */
+function safeFormatAmount(value: bigint, decimal: number): number {
+	const safeDecimal = Math.min(
+		Math.max(Number.isFinite(decimal) ? Math.floor(decimal) : 0, 0),
+		18,
+	);
 	const divisor = BigInt(10) ** BigInt(safeDecimal);
 	const integerPart = value / divisor;
 	const fractionPart = value % divisor;
 	if (fractionPart === BigInt(0)) {
-		return integerPart.toString();
+		return Number(integerPart);
 	}
-	const fractionStr = fractionPart.toString().padStart(safeDecimal, '0').replace(/0+$/, '');
-	return `${integerPart.toString()}.${fractionStr}`;
-}
-
-function decodeFtTapeParts(parts: string[]) {
-	if (parts.length < 5) return null;
-	const marker = parts[parts.length - 1]?.toLowerCase();
-	if (marker !== '4654617065') return null;
-
-	const amountHex = parts[0];
-	const decimalHex = parts[1];
-	const nameHex = parts[2];
-	const symbolHex = parts[3];
-
-	if (!amountHex || !decimalHex || !nameHex || !symbolHex) return null;
-
-	const decimal = parseInt(decimalHex, 16);
-	if (Number.isNaN(decimal)) return null;
-
-	try {
-		const amountBuffer = Buffer.from(amountHex, 'hex');
-		if (amountBuffer.length < 48) return null;
-		let totalSupply = BigInt(0);
-		for (let i = 0; i < 6; i++) {
-			totalSupply += amountBuffer.readBigUInt64LE(i * 8);
-		}
-
-		const name = hexToAscii(nameHex).replace(/\u0000+$/g, '').trim();
-		const symbol = hexToAscii(symbolHex).replace(/\u0000+$/g, '').trim();
-
-		const totalSupplyFormatted = safeFormatAmount(totalSupply, decimal);
-		const amount =
-			parseFloat(totalSupplyFormatted) || parseFloat(totalSupply.toString()) || Number(totalSupply);
-
-		return {
-			type: TransactionType.FT_MINT,
-			data: {
-				name,
-				symbol,
-				amount: amount,
-				decimal,
-			},
-		};
-	} catch (error) {
-		console.error('Failed to decode FT tape parts:', error);
-		return null;
-	}
+	const fractionStr = fractionPart.toString().padStart(safeDecimal, '0');
+	const numStr = `${integerPart.toString()}.${fractionStr}`;
+	const n = Number(numStr);
+	return Number.isFinite(n) ? n : Number(integerPart);
 }
 
 function hexToAscii(hex: string): string {
@@ -89,6 +48,59 @@ function hexToAscii(hex: string): string {
 		}
 	}
 	return result;
+}
+
+/**
+ * 从 FT Code Script 的 chunks 中解析出源 UTXO(txid, vout)
+ *
+ * 语义边界：
+ *   OP_ELSE OP_FROMALTSTACK <36字节数据> OP_EQUALVERIFY
+ * 其中 36 字节 = reverse(txid 32B) + vout(4B, uint32 小端)
+ */
+function decodeOriginUtxoFromScript(script: tbc.Script): { txid: string; vout: number } | null {
+	try {
+		const chunks = script.chunks || [];
+		for (let i = 0; i < chunks.length - 3; i++) {
+			const c0 = chunks[i];
+			const c1 = chunks[i + 1];
+			const c2 = chunks[i + 2];
+			const c3 = chunks[i + 3];
+			if (!c0 || !c1 || !c2 || !c3) continue;
+
+			// 匹配 OP_ELSE OP_FROMALTSTACK <36-byte buf> OP_EQUALVERIFY
+			if (
+				c0.opcodenum === tbc.Opcode.OP_ELSE &&
+				c1.opcodenum === tbc.Opcode.OP_FROMALTSTACK &&
+				c2.buf &&
+				c2.buf.length === 36 &&
+				c3.opcodenum === tbc.Opcode.OP_EQUALVERIFY
+			) {
+				const utxoBuf: Buffer = c2.buf;
+				const txidReversedHex = utxoBuf.subarray(0, 32).toString('hex');
+				const voutLeHex = utxoBuf.subarray(32).toString('hex'); // 4 字节小端
+
+				// 还原 txid（按字节反序）
+				let txid = '';
+				for (let j = 0; j < 32; j++) {
+					const byte = txidReversedHex.slice(j * 2, j * 2 + 2);
+					txid = byte + txid;
+				}
+
+				// 解析 vout（小端 → 大端）
+				const voutBytes = voutLeHex.match(/../g);
+				if (!voutBytes || voutBytes.length !== 4) return null;
+				const voutHexBe = voutBytes.reverse().join('');
+				const vout = parseInt(voutHexBe, 16);
+				if (!Number.isFinite(vout)) return null;
+
+				return { txid, vout };
+			}
+		}
+		return null;
+	} catch (error) {
+		console.error('Failed to decode origin utxo from code script:', error);
+		return null;
+	}
 }
 
 /**
@@ -166,14 +178,46 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 	if (!parts.length) {
 		return undefined;
 	}
-
-	const ftData = decodeFtTapeParts(parts);
-	if (ftData) {
-		return { ft_data: ftData };
-	}
-
 	const asciiParts = parts.map((part) => hexToAscii(part));
 
+	// 优先尝试识别 FT Tape 格式：
+	// [amount(48字节)] [decimal(1字节)] [name(hex)] [symbol(hex)] 4654617065
+	if (parts.length >= 5) {
+		const marker = parts[parts.length - 1]?.toLowerCase();
+		if (marker === '4654617065') {
+			const amountHex = parts[0];
+			const decimalHex = parts[1];
+			const nameHex = parts[2];
+			const symbolHex = parts[3];
+			if (amountHex && decimalHex && nameHex && symbolHex) {
+				try {
+					const decimal = parseInt(decimalHex, 16);
+					if (!Number.isNaN(decimal)) {
+						const amountBuffer = Buffer.from(amountHex, 'hex');
+						if (amountBuffer.length >= 48) {
+							let totalSupply = BigInt(0);
+							for (let i = 0; i < 6; i++) {
+								totalSupply += amountBuffer.readBigUInt64LE(i * 8);
+							}
+							const name = hexToAscii(nameHex).replace(/\u0000+$/g, '').trim();
+							const symbol = hexToAscii(symbolHex).replace(/\u0000+$/g, '').trim();
+							const amount = safeFormatAmount(totalSupply, decimal);
+							return {
+								ftTape: {
+									name: name || 'Unknown',
+									symbol: symbol || 'UNK',
+									amount,
+									decimal,
+								},
+							};
+						}
+					}
+				} catch (error) {
+					console.error('Failed to decode FT tape parts:', error);
+				}
+			}
+		}
+	}
 	// 单个数据段，尝试直接返回可读文本
 	if (parts.length === 1) {
 		const ascii = asciiParts[0]?.trim();
@@ -315,6 +359,9 @@ export function parseScript(scriptHex: string): ScriptDetail {
 		const script = new tbc.Script(scriptHex);
 		const asm = script.toASM();
 
+		// 默认尝试从 ASM 中解析源 UTXO（例如 FT Code Script）
+		const originUtxo = decodeOriginUtxoFromScript(script);
+
 		// 检查是否是P2PKH输出脚本
 		if (script.isPublicKeyHashOut()) {
 			try {
@@ -324,6 +371,7 @@ export function parseScript(scriptHex: string): ScriptDetail {
 					asm,
 					type: ScriptType.P2PKH,
 					address,
+					...(originUtxo ? { originUtxo } : {}),
 				};
 			} catch (error) {
 				console.error('Failed to extract address from P2PKH script:', error);
@@ -340,6 +388,7 @@ export function parseScript(scriptHex: string): ScriptDetail {
 					asm,
 					// type 字段只在 P2PKH 时显示，P2PK 不显示
 					address,
+					...(originUtxo ? { originUtxo } : {}),
 				};
 			} catch (error) {
 				console.error('Failed to extract address from P2PK script:', error);
@@ -407,6 +456,7 @@ export function parseScript(scriptHex: string): ScriptDetail {
 						type: ScriptType.P2PKH,
 						address,
 						data: opReturnData,
+						...(originUtxo ? { originUtxo } : {}),
 					};
 				} catch (error) {
 					console.error('Failed to extract address from P2PKH+OP_RETURN script:', error);
@@ -417,13 +467,14 @@ export function parseScript(scriptHex: string): ScriptDetail {
 				asm,
 				// type 字段只在 P2PKH 时显示，OP_RETURN 不显示
 				data: opReturnData,
+				...(originUtxo ? { originUtxo } : {}),
 			};
 		}
 
-		// 未知类型
 		return {
 			asm,
 			// type 字段只在 P2PKH 时显示，UNKNOWN 不显示
+			...(originUtxo ? { originUtxo } : {}),
 		};
 	} catch (error) {
 		console.error('Failed to parse script:', error);
