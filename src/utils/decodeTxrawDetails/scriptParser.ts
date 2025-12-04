@@ -175,6 +175,19 @@ function decodeAddressFromPublicKeyHash(hex: string): { address?: string; hash?:
 	}
 }
 
+/**
+ * 构建OP_RETURN数据
+ * @param parts 数据段数组
+ * @returns OP_RETURN数据
+ * 
+ * 语义边界：
+ *   OP_RETURN <数据>
+ * 其中 <数据> 是数据段数组
+ * 
+ * 数据段数组：
+ *   [amount(48字节)] [decimal(1字节)] [name(hex)] [symbol(hex)] 4654617065
+ * 
+*/
 function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 	if (!parts.length) {
 		return undefined;
@@ -219,20 +232,10 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 			}
 		}
 	}
-	// 单个数据段，尝试直接返回可读文本
+	// 单个数据段：不再尝试解析文本或返回 hex/ASCII，仅视为“未识别的 OP_RETURN”
 	if (parts.length === 1) {
-		const ascii = asciiParts[0]?.trim();
-		// 检查可读性：如果包含太多 '.'，认为不可读
-		if (ascii) {
-			const dotCount = (ascii.match(/\./g) || []).length;
-			const readableRatio = ascii.length > 0 ? (ascii.length - dotCount) / ascii.length : 0;
-			// 如果可读字符比例 > 50%，使用 ASCII，否则返回 hex
-			if (readableRatio > 0.5) {
-				return { type: ascii };
-			}
-		}
-		// 如果不可读，只返回 hex，不返回 asciiParts（避免显示乱码）
-		return { hexParts: parts };
+		// 返回空对象，表示没有结构化的 OP_RETURN 数据
+		return {};
 	}
 
 	// 两个数据段：检查第一个是否是 publicKeyHash（21字节，以00或01结尾）
@@ -336,20 +339,8 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 		return result;
 	}
 
-	// 其他情况保留 hex/ASCII 以便调试
-	// 过滤掉不可读的 ASCII（包含太多 '.' 的）
-	const filteredAsciiParts = asciiParts.map((ascii) => {
-		if (!ascii || ascii.length === 0) return '';
-		const dotCount = (ascii.match(/\./g) || []).length;
-		const readableRatio = (ascii.length - dotCount) / ascii.length;
-		// 如果可读字符比例 < 50%，返回空字符串，避免显示乱码
-		return readableRatio >= 0.5 ? ascii : '';
-	}).filter(ascii => ascii.length > 0);
-	
-	return {
-		hexParts: parts,
-		asciiParts: filteredAsciiParts.length > 0 ? filteredAsciiParts : undefined,
-	};
+	// 其他情况：不再返回 hexParts / asciiParts，只表示“有 OP_RETURN 但未识别具体语义”
+	return {};
 }
 
 /**

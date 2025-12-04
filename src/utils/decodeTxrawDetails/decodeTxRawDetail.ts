@@ -200,11 +200,6 @@ export type {
 	DecodedOutput,
 	TransactionDetail,
 } from './types';
-export {
-	identifyScriptTypeByASM,
-	extractPubKeyHashFromASM,
-	extractOPReturnDataFromASM,
-} from './scriptIdentifier';
 export { parseScript } from './scriptParser';
 export { getTransactionByTxid } from './transactionApi';
 export {
