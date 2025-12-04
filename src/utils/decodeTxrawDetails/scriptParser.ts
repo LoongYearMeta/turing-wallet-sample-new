@@ -6,6 +6,7 @@
 import * as tbc from 'tbc-lib-js';
 import { ScriptType } from './types';
 import type { ScriptDetail, ScriptOpReturnData } from './types';
+import { parseMultiSigAddressFromASM } from './multiSig';
 
 const PRINTABLE_ASCII_MIN = 32;
 const PRINTABLE_ASCII_MAX = 126;
