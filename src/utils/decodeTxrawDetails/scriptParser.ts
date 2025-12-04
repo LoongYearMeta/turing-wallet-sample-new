@@ -395,6 +395,22 @@ export function parseScript(scriptHex: string): ScriptDetail {
 			}
 		}
 
+		// 检查是否是多签脚本
+		if (asm.includes('OP_CHECKMULTISIG')) {
+			try {
+				const multiSigAddress = parseMultiSigAddressFromASM(asm);
+				if (multiSigAddress) {
+					return {
+						asm,
+						type: ScriptType.MULTISIG,
+						address: multiSigAddress,
+					};
+				}
+			} catch (error) {
+				console.error('Failed to extract address from MultiSig script:', error);
+			}
+		}
+
 		// 检查是否包含OP_RETURN
 		if (asm.includes('OP_RETURN') || asm.includes('OP_FALSE OP_RETURN')) {
 			// 尝试提取OP_RETURN数据

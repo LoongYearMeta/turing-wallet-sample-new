@@ -98,10 +98,10 @@ export function identifyScriptTypeByASM(asm: string): ScriptType {
 	}
 	
 	// 检查是否是多签
-	// 模式: OP_<M> <pubkey1> <pubkey2> ... <pubkeyN> OP_<N> OP_CHECKMULTISIG
+	// 模式1: OP_<M> OP_SWAP <lockScriptPrefix> OP_HASH160 <hash> OP_EQUALVERIFY OP_<N> OP_CHECKMULTISIG
+	// 模式2: OP_<M> <pubkey1> <pubkey2> ... <pubkeyN> OP_<N> OP_CHECKMULTISIG
 	if (asmUpper.includes('OP_CHECKMULTISIG')) {
-		// 可以进一步解析M和N的值
-		return ScriptType.UNKNOWN; // 暂时标记为未知，可以扩展为MULTISIG类型
+		return ScriptType.MULTISIG;
 	}
 	
 	return ScriptType.UNKNOWN;

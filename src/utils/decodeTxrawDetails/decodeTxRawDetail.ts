@@ -207,3 +207,10 @@ export {
 } from './scriptIdentifier';
 export { parseScript } from './scriptParser';
 export { getTransactionByTxid } from './transactionApi';
+export {
+	getMultiSigAddress,
+	getSignatureAndPublicKeyCount,
+	getMultiSigLockScript,
+	getCombineHash,
+	parseMultiSigAddressFromASM,
+} from './multiSig';
