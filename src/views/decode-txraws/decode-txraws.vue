@@ -134,11 +134,7 @@
 			/>
 			<!-- NFT 图片展示区域 -->
 			<div v-if="hasNftImage && showFile" class="nft-image-container">
-				<div
-					v-for="(imageUrl, index) in nftImageUrls"
-					:key="index"
-					class="nft-image-item"
-				>
+				<div v-for="(imageUrl, index) in nftImageUrls" :key="index" class="nft-image-item">
 					<img :src="imageUrl" :alt="`NFT Image ${index + 1}`" class="nft-image" />
 				</div>
 			</div>
@@ -154,7 +150,6 @@ import * as tbc from 'tbc-lib-js';
 import MyTextarea from '../../components/m-textarea.vue';
 import { decodeTxRawDetail } from '../../utils/decodeTxrawDetails/decodeTxRawDetail';
 // import { storeToRefs } from 'pinia'
-
 // 钱包状态管理
 const walletStore = useWalletStore();
 const { getWalletInfo } = walletStore;
