@@ -103,17 +103,26 @@
 					<span>Txraw Detailed Result</span>
 				</div>
 
-				<!-- View ASM 按钮 -->
-				<button
-					v-if="rawDecodedData"
-					@click="toggleShowAsm"
-					type="button"
-					class="view-asm-btn"
-					:class="{ active: showAsm }"
-				>
-					{{ showAsm ? 'Hide ASM' : 'View ASM' }}
-				</button>
-				<!-- </div> -->
+				<!-- View File 和 View ASM 按钮 -->
+				<div class="header-buttons" v-if="rawDecodedData">
+					<button
+						v-if="hasNftImage"
+						@click="toggleShowFile"
+						type="button"
+						class="view-file-btn"
+						:class="{ active: showFile }"
+					>
+						{{ showFile ? 'Hide File' : 'View File' }}
+					</button>
+					<button
+						@click="toggleShowAsm"
+						type="button"
+						class="view-asm-btn"
+						:class="{ active: showAsm }"
+					>
+						{{ showAsm ? 'Hide ASM' : 'View ASM' }}
+					</button>
+				</div>
 			</div>
 			<MyTextarea
 				v-model="decodedTxrawDetail"
@@ -123,12 +132,22 @@
 				:deletable="true"
 				:max-height="500"
 			/>
+			<!-- NFT 图片展示区域 -->
+			<div v-if="hasNftImage && showFile" class="nft-image-container">
+				<div
+					v-for="(imageUrl, index) in nftImageUrls"
+					:key="index"
+					class="nft-image-item"
+				>
+					<img :src="imageUrl" :alt="`NFT Image ${index + 1}`" class="nft-image" />
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import * as tbc from 'tbc-lib-js';
@@ -151,6 +170,7 @@ const txraw = ref('');
 const decodedTxraw = ref('');
 const decodedTxrawDetail = ref('');
 const showAsm = ref(false); // 控制是否显示 ASM
+const showFile = ref(false); // 控制是否显示文件（图片）
 const rawDecodedData = ref<any>(null); // 保存原始解码数据（包含 asm）
 const selectedNetwork = ref<'mainnet' | 'testnet'>('testnet'); // 选中的网络类型
 
@@ -175,13 +195,20 @@ const handleDecodeTxraws = async () => {
 		// 解码详细信息（异步，不阻塞基本解码）
 		decodedTxrawDetail.value = 'Decoding detailed information...';
 		showAsm.value = false; // 重置 ASM 显示状态
+		showFile.value = false; // 重置 File 显示状态
 		rawDecodedData.value = null; // 清空原始数据
 		try {
 			const detailResponse = await decodeTxRawDetail(txraw.value, selectedNetwork.value);
 			// 保存原始数据（包含 asm）
 			rawDecodedData.value = detailResponse;
-			// 根据 showAsm 状态决定是否包含 asm 字段
-			const responseToDisplay = showAsm.value ? detailResponse : removeAsmFields(detailResponse);
+			// 根据 showAsm 和 showFile 状态决定是否包含相应字段
+			let responseToDisplay = detailResponse;
+			if (!showAsm.value) {
+				responseToDisplay = removeAsmFields(responseToDisplay);
+			}
+			if (!showFile.value) {
+				responseToDisplay = removeFileFields(responseToDisplay);
+			}
 			decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 		} catch (detailError) {
 			console.error('Decode txraw detail error:', detailError);
@@ -209,12 +236,25 @@ const handleDecodeTxraws = async () => {
 // 切换 ASM 显示状态
 const toggleShowAsm = () => {
 	showAsm.value = !showAsm.value;
+	updateDisplay();
+};
 
-	// 如果有原始数据，根据新的 showAsm 状态重新格式化显示
+// 切换 File 显示状态
+const toggleShowFile = () => {
+	showFile.value = !showFile.value;
+	updateDisplay();
+};
+
+// 更新显示内容
+const updateDisplay = () => {
 	if (rawDecodedData.value) {
-		const responseToDisplay = showAsm.value
-			? rawDecodedData.value
-			: removeAsmFields(rawDecodedData.value);
+		let responseToDisplay = rawDecodedData.value;
+		if (!showAsm.value) {
+			responseToDisplay = removeAsmFields(responseToDisplay);
+		}
+		if (!showFile.value) {
+			responseToDisplay = removeFileFields(responseToDisplay);
+		}
 		decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 	}
 };
@@ -241,6 +281,76 @@ const removeAsmFields = (obj: any): any => {
 
 	return obj;
 };
+
+// 递归移除对象中的 file 字段（在 nftTape 中）
+const removeFileFields = (obj: any): any => {
+	if (obj === null || obj === undefined) {
+		return obj;
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map((item) => removeFileFields(item));
+	}
+
+	if (typeof obj === 'object') {
+		const result: any = {};
+		for (const key in obj) {
+			if (key === 'nftTape' && obj[key] && typeof obj[key] === 'object') {
+				// 保留 nftTape，但移除其中的 file 字段
+				const nftTape = { ...obj[key] };
+				delete nftTape.file;
+				result[key] = removeFileFields(nftTape);
+			} else {
+				result[key] = removeFileFields(obj[key]);
+			}
+		}
+		return result;
+	}
+
+	return obj;
+};
+
+// 检测是否有 NFT 图片
+const hasNftImage = computed(() => {
+	if (!rawDecodedData.value) return false;
+	return nftImageUrls.value.length > 0;
+});
+
+// 获取所有 NFT 图片 URL
+const nftImageUrls = computed(() => {
+	const urls: string[] = [];
+	if (!rawDecodedData.value) return urls;
+
+	// 递归查找所有 nftTape.file 字段
+	const findNftFiles = (obj: any) => {
+		if (obj === null || obj === undefined) {
+			return;
+		}
+
+		if (Array.isArray(obj)) {
+			obj.forEach((item) => findNftFiles(item));
+			return;
+		}
+
+		if (typeof obj === 'object') {
+			for (const key in obj) {
+				if (key === 'nftTape' && obj[key] && typeof obj[key] === 'object') {
+					const nftTape = obj[key];
+					if (nftTape.file && typeof nftTape.file === 'string') {
+						// 检查是否是有效的 Data URL 格式
+						if (nftTape.file.startsWith('data:image/')) {
+							urls.push(nftTape.file);
+						}
+					}
+				}
+				findNftFiles(obj[key]);
+			}
+		}
+	};
+
+	findNftFiles(rawDecodedData.value);
+	return urls;
+});
 
 // 处理网络切换
 const handleNetworkChange = () => {
@@ -319,6 +429,13 @@ onMounted(async () => {
 	border-color: var(--color-primary);
 }
 
+.header-buttons {
+	display: flex;
+	gap: var(--spacing-xs);
+	align-items: center;
+}
+
+.view-file-btn,
 .view-asm-btn {
 	padding: 6px 12px;
 	border-radius: var(--radius-sm);
@@ -333,6 +450,7 @@ onMounted(async () => {
 	user-select: none;
 }
 
+.view-file-btn:hover,
 .view-asm-btn:hover {
 	color: var(--color-text-primary);
 	background-color: var(--color-primary);
@@ -341,15 +459,43 @@ onMounted(async () => {
 	box-shadow: var(--shadow-sm);
 }
 
+.view-file-btn:active,
 .view-asm-btn:active {
 	transform: translateY(0);
 	box-shadow: none;
 }
 
+.view-file-btn.active,
 .view-asm-btn.active {
 	color: var(--color-text-primary);
 	background-color: var(--color-primary);
 	border-color: var(--color-primary);
+}
+
+.nft-image-container {
+	margin-top: var(--spacing-md);
+	padding: var(--spacing-md);
+	background-color: var(--form-bg-color);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-md);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--spacing-md);
+}
+
+.nft-image-item {
+	flex: 0 0 auto;
+	max-width: 100%;
+}
+
+.nft-image {
+	max-width: 100%;
+	max-height: 500px;
+	width: auto;
+	height: auto;
+	border-radius: var(--radius-sm);
+	box-shadow: var(--shadow-sm);
+	object-fit: contain;
 }
 
 @media (max-width: 768px) {
@@ -374,8 +520,25 @@ onMounted(async () => {
 		font-size: var(--font-size-tiny);
 	}
 
+	.header-buttons {
+		flex-wrap: wrap;
+		gap: var(--spacing-xs);
+	}
+
+	.view-file-btn,
 	.view-asm-btn {
 		flex-shrink: 0;
+		font-size: var(--font-size-tiny);
+		padding: 4px 8px;
+	}
+
+	.nft-image-container {
+		padding: var(--spacing-sm);
+		gap: var(--spacing-sm);
+	}
+
+	.nft-image {
+		max-height: 300px;
 	}
 }
 </style>

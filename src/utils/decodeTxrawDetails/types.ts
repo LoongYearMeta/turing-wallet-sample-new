@@ -38,6 +38,22 @@ export interface ScriptOpReturnData {
 		amount: number;
 		decimal: number;
 	};
+	/**
+	 * 通用 NFT Tape 解码结果（不绑定具体交易类型）
+	 * 仅当 OP_RETURN 数据符合 NFT Tape 格式时才会出现
+	 */
+	nftTape?: {
+		nftName?: string;
+		symbol?: string;
+		file?: string;
+		description?: string;
+		attributes?: string;
+		collectionId?: string;
+		collectionIndex?: number;
+		collectionName?: string;
+		supply?: number;
+		[key: string]: any; // 允许其他字段（JSON 可能包含任意字段）
+	};
 	hexParts?: string[];
 	asciiParts?: string[];
 }

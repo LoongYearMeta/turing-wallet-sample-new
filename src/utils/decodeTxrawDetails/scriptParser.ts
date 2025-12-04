@@ -52,15 +52,22 @@ function hexToAscii(hex: string): string {
 }
 
 /**
- * 从 FT Code Script 的 chunks 中解析出源 UTXO(txid, vout)
- *
- * 语义边界：
+ * 从合约 Code Script 的 chunks 中解析出源 UTXO(txid, vout)
+ * 支持 FT 和 NFT 两种格式：
+ * 
+ * FT 格式：
  *   OP_ELSE OP_FROMALTSTACK <36字节数据> OP_EQUALVERIFY
+ * 
+ * NFT 格式：
+ *   OP_ELSE <pushdata 36字节> <36字节数据> OP_EQUALVERIFY
+ * 
  * 其中 36 字节 = reverse(txid 32B) + vout(4B, uint32 小端)
  */
 function decodeOriginUtxoFromScript(script: tbc.Script): { txid: string; vout: number } | null {
 	try {
 		const chunks = script.chunks || [];
+		
+		// 尝试匹配 FT 格式：OP_ELSE OP_FROMALTSTACK <36-byte buf> OP_EQUALVERIFY
 		for (let i = 0; i < chunks.length - 3; i++) {
 			const c0 = chunks[i];
 			const c1 = chunks[i + 1];
@@ -68,7 +75,6 @@ function decodeOriginUtxoFromScript(script: tbc.Script): { txid: string; vout: n
 			const c3 = chunks[i + 3];
 			if (!c0 || !c1 || !c2 || !c3) continue;
 
-			// 匹配 OP_ELSE OP_FROMALTSTACK <36-byte buf> OP_EQUALVERIFY
 			if (
 				c0.opcodenum === tbc.Opcode.OP_ELSE &&
 				c1.opcodenum === tbc.Opcode.OP_FROMALTSTACK &&
@@ -76,30 +82,75 @@ function decodeOriginUtxoFromScript(script: tbc.Script): { txid: string; vout: n
 				c2.buf.length === 36 &&
 				c3.opcodenum === tbc.Opcode.OP_EQUALVERIFY
 			) {
-				const utxoBuf: Buffer = c2.buf;
-				const txidReversedHex = utxoBuf.subarray(0, 32).toString('hex');
-				const voutLeHex = utxoBuf.subarray(32).toString('hex'); // 4 字节小端
-
-				// 还原 txid（按字节反序）
-				let txid = '';
-				for (let j = 0; j < 32; j++) {
-					const byte = txidReversedHex.slice(j * 2, j * 2 + 2);
-					txid = byte + txid;
-				}
-
-				// 解析 vout（小端 → 大端）
-				const voutBytes = voutLeHex.match(/../g);
-				if (!voutBytes || voutBytes.length !== 4) return null;
-				const voutHexBe = voutBytes.reverse().join('');
-				const vout = parseInt(voutHexBe, 16);
-				if (!Number.isFinite(vout)) return null;
-
-				return { txid, vout };
+				return extractOriginUtxoFromBuffer(c2.buf);
 			}
 		}
+
+		// 尝试匹配 NFT 格式：OP_ELSE <pushdata opcode> <36-byte buf> OP_EQUALVERIFY
+		// pushdata opcode 可能是 OP_PUSHDATA1 (0x4c), OP_PUSHDATA2 (0x4d), OP_PUSHDATA4 (0x4e)
+		// 或者直接是 0x24 (36 的 pushdata opcode)
+		for (let i = 0; i < chunks.length - 4; i++) {
+			const c0 = chunks[i];
+			const c1 = chunks[i + 1];
+			const c2 = chunks[i + 2];
+			const c3 = chunks[i + 3];
+			if (!c0 || !c1 || !c2 || !c3) continue;
+
+			// 检查是否是 OP_ELSE
+			if (c0.opcodenum !== tbc.Opcode.OP_ELSE) continue;
+
+			// 检查 c1 是否是 pushdata opcode（0x01-0x4b 是直接 pushdata，0x4c-0x4e 是间接 pushdata）
+			const isPushdataOpcode = 
+				(c1.opcodenum >= 0x01 && c1.opcodenum <= 0x4b) || // 直接 pushdata
+				c1.opcodenum === 0x4c || // OP_PUSHDATA1
+				c1.opcodenum === 0x4d || // OP_PUSHDATA2
+				c1.opcodenum === 0x4e;   // OP_PUSHDATA4
+
+			if (
+				isPushdataOpcode &&
+				c2.buf &&
+				c2.buf.length === 36 &&
+				c3.opcodenum === tbc.Opcode.OP_EQUALVERIFY
+			) {
+				return extractOriginUtxoFromBuffer(c2.buf);
+			}
+		}
+
 		return null;
 	} catch (error) {
 		console.error('Failed to decode origin utxo from code script:', error);
+		return null;
+	}
+}
+
+/**
+ * 从 36 字节 buffer 中提取 originUtxo (txid, vout)
+ * 格式：reverse(txid 32B) + vout(4B, uint32 小端)
+ */
+function extractOriginUtxoFromBuffer(utxoBuf: Buffer): { txid: string; vout: number } | null {
+	try {
+		if (utxoBuf.length !== 36) return null;
+
+		const txidReversedHex = utxoBuf.subarray(0, 32).toString('hex');
+		const voutLeHex = utxoBuf.subarray(32).toString('hex'); // 4 字节小端
+
+		// 还原 txid（按字节反序）
+		let txid = '';
+		for (let j = 0; j < 32; j++) {
+			const byte = txidReversedHex.slice(j * 2, j * 2 + 2);
+			txid = byte + txid;
+		}
+
+		// 解析 vout（小端 → 大端）
+		const voutBytes = voutLeHex.match(/../g);
+		if (!voutBytes || voutBytes.length !== 4) return null;
+		const voutHexBe = voutBytes.reverse().join('');
+		const vout = parseInt(voutHexBe, 16);
+		if (!Number.isFinite(vout)) return null;
+
+		return { txid, vout };
+	} catch (error) {
+		console.error('Failed to extract origin utxo from buffer:', error);
 		return null;
 	}
 }
@@ -228,6 +279,31 @@ function buildOpReturnData(parts: string[]): ScriptOpReturnData | undefined {
 					}
 				} catch (error) {
 					console.error('Failed to decode FT tape parts:', error);
+				}
+			}
+		}
+	}
+
+	// 尝试识别 NFT Tape 格式：
+	// [dataHex(JSON字符串的hex)] 4e54617065
+	// 其中 4e54617065 = "NTape"
+	if (parts.length === 2) {
+		const marker = parts[1]?.toLowerCase();
+		if (marker === '4e54617065') {
+			const dataHex = parts[0];
+			if (dataHex) {
+				try {
+					// 将 hex 转换为 JSON 字符串
+					const jsonString = Buffer.from(dataHex, 'hex').toString('utf8');
+					const nftData = JSON.parse(jsonString);
+					
+					// 返回 NFT Tape 数据
+					return {
+						nftTape: nftData,
+					};
+				} catch (error) {
+					// 如果解析失败，可能是无效的 JSON 或不是 NFT Tape
+					console.error('Failed to decode NFT tape parts:', error);
 				}
 			}
 		}
