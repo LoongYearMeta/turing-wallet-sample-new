@@ -204,6 +204,8 @@ const handleDecodeTxraws = async () => {
 			if (!showFile.value) {
 				responseToDisplay = removeFileFields(responseToDisplay);
 			}
+			// 移除只有空 data 对象的 script
+			responseToDisplay = removeEmptyScriptFields(responseToDisplay);
 			decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 		} catch (detailError) {
 			console.error('Decode txraw detail error:', detailError);
@@ -250,6 +252,8 @@ const updateDisplay = () => {
 		if (!showFile.value) {
 			responseToDisplay = removeFileFields(responseToDisplay);
 		}
+		// 移除只有空 data 对象的 script
+		responseToDisplay = removeEmptyScriptFields(responseToDisplay);
 		decodedTxrawDetail.value = JSON.stringify(responseToDisplay, null, 2);
 	}
 };
@@ -297,6 +301,61 @@ const removeFileFields = (obj: any): any => {
 				result[key] = removeFileFields(nftTape);
 			} else {
 				result[key] = removeFileFields(obj[key]);
+			}
+		}
+		return result;
+	}
+
+	return obj;
+};
+
+// 检查 script 对象是否只有空的 data 字段
+const isScriptEmpty = (script: any): boolean => {
+	if (!script || typeof script !== 'object') {
+		return false;
+	}
+
+	// 检查是否有有意义的字段（除了 data）
+	const meaningfulFields = ['asm', 'type', 'address', 'originUtxo'];
+	const hasMeaningfulField = meaningfulFields.some((field) => {
+		const value = script[field];
+		// 字段存在且不为空
+		return value !== undefined && value !== null && value !== '';
+	});
+
+	// 如果没有有意义的字段，检查 data 是否为空对象
+	if (!hasMeaningfulField) {
+		const data = script.data;
+		// data 不存在、是 undefined、或者是空对象
+		if (data === undefined || data === null) {
+			return true;
+		}
+		if (typeof data === 'object' && Object.keys(data).length === 0) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
+// 递归移除只有空 data 对象的 script 字段
+const removeEmptyScriptFields = (obj: any): any => {
+	if (obj === null || obj === undefined) {
+		return obj;
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map((item) => removeEmptyScriptFields(item));
+	}
+
+	if (typeof obj === 'object') {
+		const result: any = {};
+		for (const key in obj) {
+			if (key === 'script' && isScriptEmpty(obj[key])) {
+				// 跳过这个 script 字段（不添加到 result 中）
+				continue;
+			} else {
+				result[key] = removeEmptyScriptFields(obj[key]);
 			}
 		}
 		return result;
