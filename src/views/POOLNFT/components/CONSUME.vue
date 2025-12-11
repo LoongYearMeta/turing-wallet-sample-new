@@ -72,6 +72,18 @@
 		</div>
 
 		<div class="form-item">
+			<label>LockTime (Optional)</label>
+			<input
+				v-model="form.lockTime"
+				type="text"
+				inputmode="numeric"
+				class="form-item-input"
+				placeholder="Block height to unlock (e.g. 900000)"
+			/>
+			<div v-if="errors.lockTime" class="form-item-error">{{ errors.lockTime }}</div>
+		</div>
+
+		<div class="form-item">
 			<label>Domain (Optional)</label>
 			<MyTextarea
 				v-model="form.domain"
@@ -144,6 +156,7 @@ interface PoolNftConsumeForm {
 	address: string;
 	ft_amount: string;
 	poolNFT_version: number | '';
+	lockTime: string;
 	domain: string;
 	broadcastEnabled: boolean;
 }
@@ -164,6 +177,7 @@ const form = ref<PoolNftConsumeForm>({
 	address: '',
 	ft_amount: DEFAULT_FT_AMOUNT,
 	poolNFT_version: DEFAULT_VERSION,
+	lockTime: '',
 	domain: '',
 	broadcastEnabled: true,
 });
@@ -172,6 +186,7 @@ const errors = ref({
 	nft_contract_address: '',
 	address: '',
 	ft_amount: '',
+	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -193,6 +208,7 @@ const resetForm = async () => {
 		address: '',
 		ft_amount: DEFAULT_FT_AMOUNT,
 		poolNFT_version: DEFAULT_VERSION,
+		lockTime: '',
 		domain: '',
 		broadcastEnabled: true,
 	};
@@ -290,6 +306,10 @@ const handleSubmit = async () => {
 		];
 
 		params[0].poolNFT_version = 2;
+
+		if (form.value.lockTime) {
+			params[0].lockTime = Number(form.value.lockTime);
+		}
 
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();

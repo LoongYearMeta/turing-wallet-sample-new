@@ -55,6 +55,18 @@
 		</div>
 
 		<div class="form-item">
+			<label>LockTime (Optional)</label>
+			<input
+				v-model="form.lockTime"
+				type="text"
+				inputmode="numeric"
+				class="form-item-input"
+				placeholder="Block height to unlock (e.g. 900000)"
+			/>
+			<div v-if="errors.lockTime" class="form-item-error">{{ errors.lockTime }}</div>
+		</div>
+
+		<div class="form-item">
 			<label>Domain (Optional)</label>
 			<MyTextarea
 				v-model="form.domain"
@@ -117,6 +129,7 @@ import { useFormCache } from '../../../utils/useFormCache';
 interface PoolNftMergeForm {
 	nft_contract_address: string;
 	poolNFT_version: string;
+	lockTime: string;
 	domain: string;
 }
 
@@ -133,11 +146,13 @@ const isSubmitting = ref(false);
 const form = ref<PoolNftMergeForm>({
 	nft_contract_address: '',
 	poolNFT_version: DEFAULT_VERSION,
+	lockTime: '',
 	domain: '',
 });
 
 const errors = ref({
 	nft_contract_address: '',
+	lockTime: '',
 });
 
 const sendResult = ref('');
@@ -157,6 +172,7 @@ const resetForm = async () => {
 	form.value = {
 		nft_contract_address: '',
 		poolNFT_version: DEFAULT_VERSION,
+		lockTime: '',
 		domain: '',
 	};
 	// 清空错误信息
@@ -216,6 +232,10 @@ const handleSubmit = async () => {
 				poolNFT_version: 2,
 			},
 		];
+
+		if (form.value.lockTime) {
+			params[0].lockTime = Number(form.value.lockTime);
+		}
 
 		if (form.value.domain.trim()) {
 			params[0].domain = form.value.domain.trim();
