@@ -8,7 +8,7 @@
 					Create collection, create NFT, or transfer NFT using the form below.
 				</p>
 			</div>
-			<router-link to="/records" class="history-link">
+			<router-link to="/history/records" class="history-link">
 				<span>View History</span>
 			</router-link>
 		</div>

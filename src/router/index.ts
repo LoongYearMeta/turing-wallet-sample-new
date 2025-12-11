@@ -127,11 +127,35 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/records',
+    path: '/mint-history',
+    name: 'MintHistory',
+    component: () => import('../views/history/mint-history/mint-history.vue'),
+    meta: {
+      title: 'Mint History'
+    }
+  },
+  {
+    path: '/history',
+    name: 'History',
+    redirect: '/history/records',
+    meta: {
+      title: 'History'
+    }
+  },
+  {
+    path: '/history/records',
     name: 'HistoryRecords',
-    component: () => import('../views/history/history-records.vue'),
+    component: () => import('../views/history/history-records/history-records.vue'),
     meta: {
       title: 'History Records'
+    }
+  },
+  {
+    path: '/history/mint-history',
+    name: 'HistoryMintHistory',
+    component: () => import('../views/history/mint-history/mint-history.vue'),
+    meta: {
+      title: 'Mint History'
     }
   }
 ]

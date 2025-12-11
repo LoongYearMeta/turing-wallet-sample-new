@@ -115,6 +115,7 @@ import MyTextarea from '../../../components/m-textarea.vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
+import { addMintHistory } from '../../../utils/mintHistory';
 
 const emit = defineEmits<{
 	(e: 'update-result', value: string): void;
@@ -298,9 +299,10 @@ const handleMint = async () => {
 		const txid = extractTxid(response);
 
 		// 记录历史
-		if (txid && walletInfo.value.curAddress) {
+		if (walletInfo.value.curAddress && txid) {
 			addTransactionHistory('FT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
+		addMintHistory('FT_MINT', txid, response, params);
 
 		// 通过事件把结果回传给父组件
 		emit('update-result', JSON.stringify(response, null, 2));

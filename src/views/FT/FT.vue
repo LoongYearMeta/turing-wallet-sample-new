@@ -6,7 +6,7 @@
 				<h2 class="page-title">FT Transaction</h2>
 				<p class="page-description">Mint or transfer FT tokens using the form below.</p>
 			</div>
-			<router-link to="/records" class="history-link">
+			<router-link to="/history/records" class="history-link">
 				<span>View History</span>
 			</router-link>
 		</div>

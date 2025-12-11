@@ -8,7 +8,7 @@
 					Select a POOLNFT operation to configure and submit the transaction.
 				</p>
 			</div>
-			<router-link to="/records" class="history-link">
+			<router-link to="/history/records" class="history-link">
 				<span>View History</span>
 			</router-link>
 		</div>

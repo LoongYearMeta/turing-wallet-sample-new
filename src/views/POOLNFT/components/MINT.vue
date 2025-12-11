@@ -241,6 +241,7 @@ import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
+import { addMintHistory } from '../../../utils/mintHistory';
 import { useFormCache } from '../../../utils/useFormCache';
 
 interface PoolNftMintForm {
@@ -493,6 +494,7 @@ const handleSubmit = async () => {
 		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
+		addMintHistory('POOLNFT_MINT', txid, response, params);
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT MINT transaction sent successfully', 3000);

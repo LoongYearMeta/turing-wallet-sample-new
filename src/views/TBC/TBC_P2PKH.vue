@@ -8,7 +8,7 @@
 					Please enter the recipient address and amount you want to send.
 				</p>
 			</div>
-			<router-link to="/records" class="history-link">
+			<router-link to="/history/records" class="history-link">
 				<span>View History</span>
 			</router-link>
 		</div>

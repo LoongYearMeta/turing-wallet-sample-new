@@ -147,6 +147,7 @@ import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
+// @ts-ignore - Vue component with script setup
 import MyTextarea from '../../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { useFormCache } from '../../../utils/useFormCache';
@@ -278,8 +279,9 @@ const sendTransaction = async (params: any[]) => {
 		throw new Error('window is not defined');
 	}
 
-	if (window.Turing && typeof window.Turing.sendTransaction === 'function') {
-		return await window.Turing.sendTransaction(params);
+	const turing = (window as any).Turing;
+	if (turing && typeof turing.sendTransaction === 'function') {
+		return await turing.sendTransaction(params);
 	}
 
 	throw new Error(

@@ -253,9 +253,19 @@ const menuItems: MenuItem[] = [
 		icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>',
 	},
 	{
-		path: '/records',
-		label: 'History Records',
-		icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+		path: '/history',
+		label: 'History',
+		icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>',
+		children: [
+			{
+				path: '/history/records',
+				label: 'Transaction History',
+			},
+			{
+				path: '/history/mint-history',
+				label: 'Mint History',
+			},
+		],
 	},
 ];
 

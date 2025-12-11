@@ -58,7 +58,7 @@
 
 		<!-- file input -->
 		<div class="form-item">
-			<label>File (Image) <span class="required">*</span></label>
+			<label>File (Image) <span class="optional">(Optional)</span></label>
 			<input
 				type="file"
 				accept="image/*"
@@ -126,6 +126,7 @@ import MyTextarea from '../../../components/m-textarea.vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
+import { addMintHistory } from '../../../utils/mintHistory';
 
 const emit = defineEmits<{
 	(e: 'update-result', value: string): void;
@@ -273,14 +274,6 @@ const validateNftCreateForm = (): boolean => {
 		errors.value.description = '';
 	}
 
-	// 验证 file
-	if (!nftCreateForm.value.file || !nftCreateForm.value.file.trim()) {
-		errors.value.file = 'File is required';
-		isValid = false;
-	} else {
-		errors.value.file = '';
-	}
-
 	// 验证 collection_id
 	if (!nftCreateForm.value.collection_id || !nftCreateForm.value.collection_id.trim()) {
 		errors.value.collection_id = 'Collection ID is required';
@@ -297,7 +290,6 @@ const isNftCreateFormValid = computed(() => {
 	return (
 		nftCreateForm.value.name.trim() &&
 		nftCreateForm.value.description.trim() &&
-		nftCreateForm.value.file.trim() &&
 		nftCreateForm.value.collection_id.trim() &&
 		!errors.value.name &&
 		!errors.value.description &&
@@ -321,10 +313,13 @@ const handleNftCreate = async () => {
 		const nftData: any = {
 			nftName: nftCreateForm.value.name.trim(),
 			description: nftCreateForm.value.description.trim(),
-			file: nftCreateForm.value.file.trim(),
 			symbol: nftCreateForm.value.name.trim(),
 			attributes: nftCreateForm.value.name.trim(),
 		};
+
+	if (nftCreateForm.value.file && nftCreateForm.value.file.trim()) {
+		nftData.file = nftCreateForm.value.file.trim();
+	}
 
 		// 构建提交参数，将 nftData 格式化为 JSON 字符串
 		const params: any[] = [
@@ -354,6 +349,7 @@ const handleNftCreate = async () => {
 		if (nftCreateForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
+		addMintHistory('NFT_CREATE', txid, response, params);
 
 		// 通过事件把结果回传给父组件
 		emit('update-result', JSON.stringify(response, null, 2));

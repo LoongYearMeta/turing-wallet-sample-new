@@ -28,7 +28,14 @@ export const appMenu: MenuItem[] = [
   { path: '/nft', label: 'NFT' },
   { path: '/poolnft', label: 'POOLNFT' },
   { path: '/wallet-test', label: 'Turing Wallet Test' },
-  { path: '/records', label: 'History Records' },
+  {
+    path: '/history',
+    label: 'History',
+    children: [
+      { path: '/history/records', label: 'Transaction History' },
+      { path: '/history/mint-history', label: 'Mint History' },
+    ],
+  },
 ]
 
 
