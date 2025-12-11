@@ -457,14 +457,18 @@ watch(
 }
 
 .copy-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	color: var(--color-primary);
 	font-size: var(--font-size-small);
 	cursor: pointer;
 	border: 1px solid var(--color-primary);
-	padding: 4px;
+	padding: 4px 6px;
 	border-radius: 6px;
 	background-color: #432d15;
 	transition: all 0.3s ease;
+	line-height: 1;
 }
 .copy-btn:hover {
 	background-color: #ec8304;

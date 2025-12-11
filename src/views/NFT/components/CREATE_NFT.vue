@@ -349,7 +349,9 @@ const handleNftCreate = async () => {
 		if (nftCreateForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);
 		}
-		addMintHistory('NFT_CREATE', txid, response, params);
+		if (txid) {
+			addMintHistory('NFT_CREATE', txid, response, params);
+		}
 
 		// 通过事件把结果回传给父组件
 		emit('update-result', JSON.stringify(response, null, 2));

@@ -494,7 +494,9 @@ const handleSubmit = async () => {
 		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_MINT', txid, response, params, walletInfo.value.curAddress);
 		}
-		addMintHistory('POOLNFT_MINT', txid, response, params);
+		if (txid) {
+			addMintHistory('POOLNFT_MINT', txid, response, params);
+		}
 
 		sendResult.value = JSON.stringify(response, null, 2);
 		toastApi.showSuccess('POOLNFT MINT transaction sent successfully', 3000);

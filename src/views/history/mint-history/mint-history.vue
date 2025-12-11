@@ -2,11 +2,9 @@
 	<div class="history-records-page">
 		<div class="page-header">
 			<h2>Mint History</h2>
-			<div class="header-actions">
-				<button v-if="historyList.length > 0" @click="handleClearAll" class="clear-btn">
-					Clear All
-				</button>
-			</div>
+			<button v-if="historyList.length > 0" @click="handleClearAll" class="clear-btn">
+				Clear History
+			</button>
 		</div>
 
 		<div v-if="historyList.length > 0" class="search-section">
@@ -18,7 +16,7 @@
 				<input
 					v-model="searchKeyword"
 					type="text"
-					placeholder="Search by type or txid"
+					placeholder="Search by method (e.g., FT_MINT, NFT_CREATE...)"
 					class="search-input"
 				/>
 				<button
@@ -62,28 +60,21 @@
 		</div>
 
 		<div v-else class="history-list">
-			<div
-				v-for="item in filteredHistoryList"
-				:key="item.id"
-				class="history-item"
-			>
+			<div v-for="item in filteredHistoryList" :key="item.txid" class="history-item">
 				<div class="history-item-header">
 					<div class="history-item-meta">
 						<span class="history-method">{{ item.type }}</span>
 						<span class="history-time">{{ formatTime(item.timestamp) }}</span>
 					</div>
-					<div class="history-item-actions">
-						<button class="delete-btn" @click="handleDelete(item.id)">Delete</button>
-						<button
-							@click="toggleExpand(item.id)"
-							class="expand-btn"
-							:class="{ expanded: expandedItems.has(item.id) }"
-						>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<polyline points="6 9 12 15 18 9"></polyline>
-							</svg>
-						</button>
-					</div>
+					<button
+						@click="toggleExpand(item.txid)"
+						class="expand-btn"
+						:class="{ expanded: expandedItems.has(item.txid) }"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<polyline points="6 9 12 15 18 9"></polyline>
+						</svg>
+					</button>
 				</div>
 
 				<div class="history-item-content">
@@ -95,7 +86,7 @@
 						<div class="history-value txid-value">{{ item.txid || 'N/A' }}</div>
 					</div>
 
-					<div v-if="expandedItems.has(item.id)" class="history-details">
+					<div v-if="expandedItems.has(item.txid)" class="history-details">
 						<div class="history-field">
 							<label>Request Params:</label>
 							<MyTextarea
@@ -131,7 +122,6 @@ import MyTextarea from '../../../components/m-textarea.vue';
 import {
 	clearMintHistory,
 	getMintHistory,
-	removeMintHistory,
 	type MintHistoryItem,
 } from '../../../utils/mintHistory';
 import { useToast } from '../../../utils/useToast';
@@ -153,10 +143,7 @@ const filteredHistoryList = computed(() => {
 	}
 	const keyword = searchKeyword.value.trim().toLowerCase();
 	return historyList.value.filter((item: MintHistoryItem) => {
-		return (
-			item.type.toLowerCase().includes(keyword) ||
-			(item.txid && item.txid.toLowerCase().includes(keyword))
-		);
+		return item.type.toLowerCase().includes(keyword);
 	});
 });
 
@@ -164,18 +151,12 @@ const clearSearch = () => {
 	searchKeyword.value = '';
 };
 
-const toggleExpand = (id: string) => {
-	if (expandedItems.value.has(id)) {
-		expandedItems.value.delete(id);
+const toggleExpand = (txid: string) => {
+	if (expandedItems.value.has(txid)) {
+		expandedItems.value.delete(txid);
 	} else {
-		expandedItems.value.add(id);
+		expandedItems.value.add(txid);
 	}
-};
-
-const handleDelete = (id: string) => {
-	removeMintHistory(id);
-	loadHistory();
-	toastApi.showSuccess('Record deleted', 2000);
 };
 
 const handleClearAll = () => {
@@ -187,15 +168,10 @@ const handleClearAll = () => {
 	}
 };
 
-const copyTxid = async (txid: string) => {
+const copyTxid = (txid: string) => {
 	if (!txid) return;
-	try {
-		await navigator.clipboard.writeText(txid);
-		toastApi.showSuccess('TXID copied', 2000);
-	} catch (error) {
-		console.error('Copy txid failed:', error);
-		toastApi.showError('Failed to copy TXID', 2000);
-	}
+	navigator.clipboard.writeText(txid);
+	toastApi.showSuccess('TXID copied to clipboard', 2000);
 };
 
 const formatTime = (timestamp: number): string => {
@@ -245,102 +221,61 @@ onUnmounted(() => {
 @import '../../../assets/form-page.css';
 
 .history-records-page {
+	padding: var(--spacing-lg);
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: var(--spacing-lg);
-	box-sizing: border-box;
 }
 
 .page-header {
 	display: flex;
-	align-items: center;
 	justify-content: space-between;
+	align-items: center;
 	margin-bottom: var(--spacing-lg);
 }
 
-.header-actions {
-	display: flex;
-	gap: var(--spacing-sm);
+.page-header h2 {
+	color: var(--color-text-primary);
+	margin: 0;
+	font-size: var(--font-size-title);
 }
 
 .clear-btn {
-	padding: 8px 14px;
-	border: 1px solid var(--color-border);
-	background: transparent;
+	padding: var(--spacing-xs) var(--spacing-sm);
 	border-radius: var(--radius-sm);
+	background-color: var(--color-error);
+	color: white;
+	border: none;
 	cursor: pointer;
-	transition: all 0.2s ease;
-	color: var(--color-text-secondary);
+	font-size: var(--font-size-subtitle);
+	transition: background-color 0.2s ease;
 }
 
 .clear-btn:hover {
-	border-color: var(--color-primary);
-	color: var(--color-primary);
-	background: rgba(255, 140, 0, 0.06);
-}
-
-.search-section {
-	margin-bottom: var(--spacing-md);
-}
-
-.search-box {
-	position: relative;
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-xs);
-	border: 1px solid var(--form-border-color);
-	border-radius: var(--radius-sm);
-	padding: 8px 12px;
-	background: var(--form-item-bg-color);
-}
-
-.search-icon {
-	width: 18px;
-	height: 18px;
-	color: var(--color-text-tertiary);
-}
-
-.search-input {
-	flex: 1;
-	border: none;
-	outline: none;
-	background: transparent;
-	color: var(--color-text-primary);
-}
-
-.clear-search-btn {
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: var(--color-text-tertiary);
-}
-
-.search-result-info {
-	margin-top: var(--spacing-xs);
-	color: var(--color-text-secondary);
-	font-size: 13px;
+	background-color: #d32f2f;
 }
 
 .empty-state {
-	margin-top: var(--spacing-xl);
-	padding: var(--spacing-lg);
-	border: 1px dashed var(--color-border);
-	border-radius: var(--radius-md);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--spacing-xl) var(--spacing-lg);
 	text-align: center;
-	color: var(--color-text-secondary);
 }
 
 .empty-icon {
 	margin-bottom: var(--spacing-md);
 }
 
+.empty-state p {
+	color: var(--color-text-secondary);
+	margin: var(--spacing-xs) 0;
+	font-size: var(--font-size-subtitle);
+}
+
 .empty-hint {
-	margin-top: 4px;
-	color: var(--color-text-tertiary);
-	font-size: 13px;
+	font-size: var(--font-size-small);
+	opacity: 0.7;
 }
 
 .history-list {
@@ -350,18 +285,21 @@ onUnmounted(() => {
 }
 
 .history-item {
-	border: 1px solid var(--color-border);
+	background-color: var(--form-bg-color);
+	border: 1px solid var(--form-border-color);
 	border-radius: var(--radius-md);
 	padding: var(--spacing-md);
-	background: var(--color-bg-darker);
-	box-shadow: var(--shadow-sm);
+	transition: box-shadow 0.2s ease;
+}
+
+.history-item:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .history-item-header {
 	display: flex;
-	align-items: center;
 	justify-content: space-between;
-	gap: var(--spacing-sm);
+	align-items: center;
 	margin-bottom: var(--spacing-sm);
 }
 
@@ -369,59 +307,46 @@ onUnmounted(() => {
 	display: flex;
 	align-items: center;
 	gap: var(--spacing-sm);
-	flex-wrap: wrap;
-}
-
-.history-item-actions {
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-xs);
 }
 
 .history-method {
-	padding: 4px 8px;
-	background: rgba(255, 140, 0, 0.08);
-	color: var(--color-primary);
+	display: inline-block;
+	padding: 4px 12px;
+	background-color: var(--color-primary);
+	color: white;
 	border-radius: var(--radius-sm);
+	font-size: var(--font-size-small);
 	font-weight: 600;
-	font-size: 13px;
 }
 
 .history-time {
 	color: var(--color-text-secondary);
-	font-size: 13px;
-}
-
-.delete-btn {
-	padding: 6px 10px;
-	border: 1px solid var(--color-border);
-	background: transparent;
-	border-radius: var(--radius-sm);
-	cursor: pointer;
-	color: var(--color-text-secondary);
-	transition: all 0.2s ease;
-}
-
-.delete-btn:hover {
-	border-color: var(--color-error);
-	color: var(--color-error);
+	font-size: var(--font-size-small);
 }
 
 .expand-btn {
-	width: 32px;
-	height: 32px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--color-text-secondary);
+	padding: var(--spacing-xs);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid var(--color-border);
-	border-radius: 50%;
-	background: transparent;
-	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.expand-btn:hover {
+	color: var(--color-primary);
 }
 
 .expand-btn.expanded {
 	transform: rotate(180deg);
+}
+
+.expand-btn svg {
+	width: 20px;
+	height: 20px;
 }
 
 .history-item-content {
@@ -430,54 +355,134 @@ onUnmounted(() => {
 	gap: var(--spacing-sm);
 }
 
-.history-field label {
+.history-field {
 	display: flex;
-	align-items: center;
-	gap: 6px;
-	color: var(--color-text-secondary);
-	font-size: 13px;
-	margin-bottom: 4px;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+
+.history-field label {
+	font-weight: 600;
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
 }
 
 .history-value {
-	font-family: var(--font-family-monospace);
-	background: var(--form-item-bg-color);
-	padding: 8px;
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--form-border-color);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-small);
 	word-break: break-all;
+	padding: var(--spacing-xs);
+	background-color: rgba(0, 0, 0, 0.02);
+	border-radius: var(--radius-sm);
+}
+
+.txid-value {
+	color: var(--color-primary);
+	font-weight: 500;
 }
 
 .history-details {
 	display: flex;
 	flex-direction: column;
-	gap: var(--spacing-sm);
+	gap: var(--spacing-md);
 	margin-top: var(--spacing-sm);
+	padding-top: var(--spacing-sm);
+	border-top: 1px solid var(--form-border-color);
 }
 
-.history-textarea :deep(textarea) {
-	min-height: 140px;
+.history-textarea {
+	font-size: var(--font-size-small);
 }
 
 .copy-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	color: var(--color-primary);
+	font-size: var(--font-size-small);
 	cursor: pointer;
-	font-size: 12px;
-	text-transform: uppercase;
+	border: 1px solid var(--color-primary);
+	padding: 4px 6px;
+	border-radius: 6px;
+	background-color: #432d15;
+	transition: all 0.3s ease;
+	line-height: 1;
+}
+.copy-btn:hover {
+	background-color: #ec8304;
+	color: white;
 }
 
-@media (max-width: 768px) {
-	.history-records-page {
-		padding: var(--spacing-md);
-	}
+.search-section {
+	margin-bottom: var(--spacing-lg);
+}
 
-	.history-item {
-		padding: var(--spacing-sm);
-	}
+.search-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+	background-color: var(--form-bg-color);
+	border: 1px solid var(--form-border-color);
+	border-radius: var(--radius-md);
+	padding: var(--spacing-sm) var(--spacing-md);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
-	.history-item-header {
-		align-items: flex-start;
-	}
+.search-box:focus-within {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px rgba(236, 131, 4, 0.1);
+}
+
+.search-icon {
+	width: 20px;
+	height: 20px;
+	color: var(--color-text-secondary);
+	margin-right: var(--spacing-sm);
+	flex-shrink: 0;
+}
+
+.search-input {
+	flex: 1;
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--color-text-primary);
+	font-size: var(--font-size-subtitle);
+	padding: 0;
+}
+
+.search-input::placeholder {
+	color: var(--color-text-secondary);
+	opacity: 0.6;
+}
+
+.clear-search-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--color-text-secondary);
+	padding: var(--spacing-xs);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.2s ease;
+	margin-left: var(--spacing-xs);
+	flex-shrink: 0;
+}
+
+.clear-search-btn:hover {
+	color: var(--color-text-primary);
+}
+
+.clear-search-btn svg {
+	width: 18px;
+	height: 18px;
+}
+
+.search-result-info {
+	margin-top: var(--spacing-sm);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-small);
 }
 </style>
 

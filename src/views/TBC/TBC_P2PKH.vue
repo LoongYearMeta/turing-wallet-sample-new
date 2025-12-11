@@ -124,6 +124,7 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useToast } from '../../utils/useToast';
 import { useWalletStore } from '../../stores/wallet';
 import { storeToRefs } from 'pinia';
+// @ts-ignore - Vue component with script setup
 import MyTextarea from '../../components/m-textarea.vue';
 import { addTransactionHistory, extractTxid } from '../../utils/transactionHistory';
 
