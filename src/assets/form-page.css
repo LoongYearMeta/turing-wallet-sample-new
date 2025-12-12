@@ -146,7 +146,8 @@
 }
 
 /* File input styles */
-.form-item-file-input {
+.form-item-file-input,
+input[type="file"].form-item-file-input {
 	width: 100%;
 	padding: var(--spacing-xs);
 	border-radius: var(--radius-sm);
@@ -156,13 +157,27 @@
 	font-size: var(--font-size-subtitle);
 	box-sizing: border-box;
 	transition: all 0.2s ease;
-	cursor: pointer;
+	cursor: pointer !important;
 }
 
-.form-item-file-input:focus {
-	outline: none;
-	border-color: var(--color-primary);
-	box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+/* 针对文件选择按钮的样式 */
+.form-item-file-input::file-selector-button,
+input[type="file"].form-item-file-input::file-selector-button {
+	cursor: pointer !important;
+	padding: 4px 8px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--form-border-color);
+	background-color: var(--color-primary);
+	color: white;
+	font-size: var(--font-size-subtitle);
+	margin-right: var(--spacing-sm);
+	transition: all 0.2s ease;
+}
+
+.form-item-file-input::file-selector-button:hover,
+input[type="file"].form-item-file-input::file-selector-button:hover {
+	background-color: var(--color-primary-hover);
+	cursor: pointer !important;
 }
 
 .file-preview {
