@@ -116,6 +116,11 @@ export function clearTransactionHistory(address: string): void {
 		
 		const storageKey = getStorageKey(address);
 		localStorage.removeItem(storageKey);
+		
+		// 同步地址缓存（重建，因为优先从 MintHistory 读取，所以影响较小）
+		import('./contractAddressCache').then((module) => {
+			module.rebuildAddressCacheFromHistory(address);
+		});
 	} catch (error) {
 		console.error('Failed to clear transaction history:', error);
 	}

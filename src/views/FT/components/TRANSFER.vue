@@ -37,12 +37,11 @@
 				FT Contract Address
 				<span class="required">*</span>
 			</label>
-			<MyTextarea
+			<ContractAddressSelector
 				v-model="transferForm.ft_contract_address"
+				address-type="ft"
+				:allowed-sources="['FT_MINT']"
 				placeholder="Please input FT contract address"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
 			/>
 			<div v-if="errors.ft_contract_address" class="form-item-error">
 				{{ errors.ft_contract_address }}
@@ -132,6 +131,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
+import ContractAddressSelector from '../../../components/ContractAddressSelector.vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';

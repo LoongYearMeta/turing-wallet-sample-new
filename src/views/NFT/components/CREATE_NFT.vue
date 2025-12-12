@@ -75,12 +75,11 @@
 		<!-- collection_id input -->
 		<div class="form-item">
 			<label>Collection ID <span class="required">*</span></label>
-			<MyTextarea
+			<ContractAddressSelector
 				v-model="nftCreateForm.collection_id"
+				address-type="collection"
+				:allowed-sources="['COLLECTION_CREATE']"
 				placeholder="Please input collection ID (from COLLECTION_CREATE result)"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
 			/>
 			<div v-if="errors.collection_id" class="form-item-error">{{ errors.collection_id }}</div>
 		</div>
@@ -123,10 +122,12 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
+import ContractAddressSelector from '../../../components/ContractAddressSelector.vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { addMintHistory } from '../../../utils/mintHistory';
+import { addContractAddress } from '../../../utils/contractAddressCache';
 
 const emit = defineEmits<{
 	(e: 'update-result', value: string): void;
@@ -345,6 +346,11 @@ const handleNftCreate = async () => {
 		const response = await sendTransaction(params);
 
 		const txid = extractTxid(response);
+
+		// 提取并缓存 NFT 合约地址（txid 就是合约地址）
+		if (txid) {
+			addContractAddress(txid, 'nft', 'NFT_CREATE', txid);
+		}
 
 		if (nftCreateForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {
 			addTransactionHistory('NFT_CREATE', txid, response, params, walletInfo.value.curAddress);

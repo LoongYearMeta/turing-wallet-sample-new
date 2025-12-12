@@ -119,6 +119,7 @@ import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { addMintHistory } from '../../../utils/mintHistory';
+import { addContractAddress } from '../../../utils/contractAddressCache';
 
 const emit = defineEmits<{
 	(e: 'update-result', value: string): void;
@@ -362,6 +363,12 @@ const handleCollectionCreate = async () => {
 
 		// 提取 txid（仅在广播时有效）
 		const txid = extractTxid(response);
+
+		// 提取并缓存合集ID（txid 就是 Collection ID）
+		if (txid) {
+			const timestamp = Date.now();
+			addContractAddress(txid, 'collection', 'COLLECTION_CREATE', txid, undefined, timestamp);
+		}
 
 		// 仅在 broadcastEnabled 为 true 时记录历史
 		if (collectionForm.value.broadcastEnabled && txid && walletInfo.value.curAddress) {

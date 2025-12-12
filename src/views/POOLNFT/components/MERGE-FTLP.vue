@@ -32,12 +32,11 @@
 
 		<div class="form-item">
 			<label>PoolNFT Contract Address <span class="required">*</span></label>
-			<MyTextarea
+			<ContractAddressSelector
 				v-model="form.nft_contract_address"
+				address-type="ft"
+				:allowed-sources="['POOLNFT_MINT']"
 				placeholder="Please enter the PoolNFT contract address"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
 			/>
 			<div v-if="errors.nft_contract_address" class="form-item-error">
 				{{ errors.nft_contract_address }}
@@ -123,6 +122,7 @@ import { storeToRefs } from 'pinia';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import MyTextarea from '../../../components/m-textarea.vue';
+import ContractAddressSelector from '../../../components/ContractAddressSelector.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { useFormCache } from '../../../utils/useFormCache';
 

@@ -14,11 +14,13 @@
 			class="form-item-textarea m-textarea"
 		></textarea>
 		<!-- 操作按钮区域（仅在需要时显示） -->
-		<div v-if="copyable || deletable" class="m-textarea-actions-wrapper">
+		<div v-if="copyable || deletable || $slots.actions" class="m-textarea-actions-wrapper">
 			<!-- 分割线 -->
 			<div class="m-textarea-divider"></div>
 			<!-- flex 布局 -->
 			<div class="m-textarea-actions">
+				<!-- 自定义操作按钮插槽 -->
+				<slot name="actions"></slot>
 				<!-- copy -->
 				<button
 					v-if="copyable"

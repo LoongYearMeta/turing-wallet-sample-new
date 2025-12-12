@@ -47,6 +47,11 @@ export function removeMintHistory(id: string): void {
 		const existing = getMintHistory();
 		const filtered = existing.filter((item) => item.id !== id);
 		localStorage.setItem(MINT_HISTORY_STORAGE_KEY, JSON.stringify(filtered));
+		
+		// 同步地址缓存
+		import('./contractAddressCache').then((module) => {
+			module.syncAddressCacheWithHistory();
+		});
 	} catch (error) {
 		console.error('Failed to remove mint history:', error);
 	}
@@ -55,6 +60,11 @@ export function removeMintHistory(id: string): void {
 export function clearMintHistory(): void {
 	try {
 		localStorage.removeItem(MINT_HISTORY_STORAGE_KEY);
+		
+		// 同步地址缓存（重建）
+		import('./contractAddressCache').then((module) => {
+			module.rebuildAddressCacheFromHistory();
+		});
 	} catch (error) {
 		console.error('Failed to clear mint history:', error);
 	}

@@ -33,12 +33,11 @@
 		<!-- form body - FT Contract Address -->
 		<div class="form-item">
 			<label>FT Contract Address <span class="required">*</span></label>
-			<MyTextarea
+			<ContractAddressSelector
 				v-model="form.ft_contract_address"
+				address-type="ft"
+				:allowed-sources="['FT_MINT']"
 				placeholder="Please enter the FT contract address"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
 			/>
 			<div v-if="errors.ft_contract_address" class="form-item-error">
 				{{ errors.ft_contract_address }}
@@ -240,8 +239,10 @@ import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
+import ContractAddressSelector from '../../../components/ContractAddressSelector.vue';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { addMintHistory } from '../../../utils/mintHistory';
+import { addContractAddress } from '../../../utils/contractAddressCache';
 import { useFormCache } from '../../../utils/useFormCache';
 
 interface PoolNftMintForm {
@@ -490,6 +491,11 @@ const handleSubmit = async () => {
 
 		const response = await sendTransaction(params);
 		const txid = extractTxid(response);
+
+		// 提取并缓存 FT 合约地址（txid 就是合约地址）
+		if (txid) {
+			addContractAddress(txid, 'ft', 'POOLNFT_MINT', txid);
+		}
 
 		if (txid && walletInfo.value.curAddress) {
 			addTransactionHistory('POOLNFT_MINT', txid, response, params, walletInfo.value.curAddress);

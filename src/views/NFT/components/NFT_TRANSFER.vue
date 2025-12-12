@@ -34,12 +34,11 @@
 		<!-- nft_contract_address input -->
 		<div class="form-item">
 			<label>NFT Contract Address <span class="required">*</span></label>
-			<MyTextarea
+			<ContractAddressSelector
 				v-model="nftTransferForm.nft_contract_address"
+				address-type="nft"
+				:allowed-sources="['NFT_CREATE']"
 				placeholder="Please input NFT contract address (from NFT_CREATE result)"
-				:readonly="false"
-				:copyable="true"
-				:deletable="true"
 			/>
 			<div v-if="errors.nft_contract_address" class="form-item-error">
 				{{ errors.nft_contract_address }}
@@ -97,6 +96,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import MyTextarea from '../../../components/m-textarea.vue';
+import ContractAddressSelector from '../../../components/ContractAddressSelector.vue';
 import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';

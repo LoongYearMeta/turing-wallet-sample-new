@@ -116,6 +116,7 @@ import { useToast } from '../../../utils/useToast';
 import { useWalletStore } from '../../../stores/wallet';
 import { addTransactionHistory, extractTxid } from '../../../utils/transactionHistory';
 import { addMintHistory } from '../../../utils/mintHistory';
+import { addContractAddress } from '../../../utils/contractAddressCache';
 
 const emit = defineEmits<{
 	(e: 'update-result', value: string): void;
@@ -297,6 +298,11 @@ const handleMint = async () => {
 
 		// 提取 txid
 		const txid = extractTxid(response);
+
+		// 提取并缓存 FT 合约地址（txid 就是合约地址）
+		if (txid) {
+			addContractAddress(txid, 'ft', 'FT_MINT', txid);
+		}
 
 		// 记录历史
 		if (walletInfo.value.curAddress && txid) {
